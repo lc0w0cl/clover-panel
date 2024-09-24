@@ -29,22 +29,6 @@ const newShortcut = ref({
   link: ''
 });
 
-// 添加或更新导航的函数
-const addOrUpdateShortcut = () => {
-  if (newShortcut.value.title && newShortcut.value.icon && newShortcut.value.link) {
-    if (selectedShortcutIndex.value !== null) {
-      // 编辑模式
-      shortcuts.value[selectedShortcutIndex.value] = { ...newShortcut.value };
-    } else {
-      // 新增模式
-      shortcuts.value.push({ ...newShortcut.value });
-    }
-    resetForm();
-  } else {
-    alert('请完整填写所有字段');
-  }
-};
-
 const openAddDialog = () => {
   isEdit.value = false;
   initialData.value = { title: '', icon: '', link: '' };
@@ -80,27 +64,53 @@ const closeContextMenu = () => {
   showContextMenu.value = false;
 };
 
+// 处理右键菜单
+const handleContextMenu = (event, index) => {
+  event.preventDefault(); // 阻止默认右键菜单
+  selectedShortcutIndex.value = index; // 保存选中的索引
+  showContextMenu.value = true; // 显示自定义菜单
+  contextMenuStyle.value = {
+    top: `${event.clientY}px`,
+    left: `${event.clientX}px`
+  };
+};
+
+// 点击页面任意位置时关闭右键菜单
 const handleOutsideClick = (event) => {
   const menu = document.querySelector('.context-menu');
   if (menu && !menu.contains(event.target)) {
-    closeContextMenu();
+    showContextMenu.value = false;
   }
 };
 
-// 在组件挂载时添加事件监听器，组件销毁时移除监听器
-onMounted(() => {
-  window.addEventListener('click', handleOutsideClick);
-});
+// 点击菜单项
+const onMenuItemClick = (action) => {
+  if (action === 'edit') {
+    openEditDialog(selectedShortcutIndex.value);
+  } else if (action === 'delete') {
+    deleteShortcut(selectedShortcutIndex.value);
+  }
+  showContextMenu.value = false; // 隐藏菜单
+};
 
-onBeforeUnmount(() => {
-  window.removeEventListener('click', handleOutsideClick);
-});
+
+// 添加全局点击事件监听
+window.addEventListener('click', handleOutsideClick);
+
+// // 在组件挂载时添加事件监听器，组件销毁时移除监听器
+// onMounted(() => {
+//   window.addEventListener('click', handleOutsideClick);
+// });
+//
+// onBeforeUnmount(() => {
+//   window.removeEventListener('click', handleOutsideClick);
+// });
 
 </script>
 
 <template>
 
-  <div>
+  <div @click="closeContextMenu">
     <!-- 现有的导航展示 -->
     <div class="shortcuts-container">
       <ShortcutCard
@@ -109,7 +119,7 @@ onBeforeUnmount(() => {
           :title="item.title"
           :icon="item.icon"
           :link="item.link"
-          @contextmenu="openEditDialog(index)"
+          @contextmenu="handleContextMenu($event, index)"
       />
       <!-- "+" 添加新导航按钮 -->
       <div class="shortcut-card add-card" @click="openAddDialog">
@@ -129,8 +139,8 @@ onBeforeUnmount(() => {
     <!-- 自定义右键菜单 -->
     <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
       <ul>
-        <li @click="openEditDialog(selectedShortcutIndex)">编辑</li>
-        <li @click="deleteShortcut(selectedShortcutIndex)">删除</li>
+        <li @click="onMenuItemClick('edit')">编辑</li>
+        <li @click="onMenuItemClick('delete')">删除</li>
       </ul>
     </div>
   </div>
