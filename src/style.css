@@ -28,7 +28,15 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+
+  background-image: url('/src/assets/background.webp'); /* 背景图片路径 */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0;
 }
+
+
 
 h1 {
   font-size: 3.2em;
@@ -67,7 +75,7 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    /*color: #213547;*/
     background-color: #ffffff;
   }
   a:hover {

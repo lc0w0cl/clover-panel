@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import {onMounted, onUnmounted, ref, watch} from 'vue';
 
 // Props from parent to control visibility and initial data
 const props = defineProps({
@@ -44,6 +44,24 @@ const save = () => {
 const cancel = () => {
   emit('cancel');
 };
+
+
+// 监听 ESC 键关闭对话框
+const handleKeyDown = (event) => {
+  if (event.key === 'Escape') {
+    cancel();
+  }
+};
+
+// 组件挂载时添加键盘监听器
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+// 组件卸载时移除键盘监听器
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>
 
 <style scoped>
