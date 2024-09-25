@@ -3,7 +3,6 @@
       v-if="visible"
       class="context-menu"
       :style="{ top: `${position.y}px`, left: `${position.x}px` }"
-      @mouseleave="hideMenu"
   >
     <ul>
       <li @click="edit">编辑</li>

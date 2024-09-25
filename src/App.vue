@@ -11,6 +11,19 @@ const shortcuts = ref([
   {title: 'YouTube', icon: '/src/assets/vue.svg', link: 'https://www.youtube.com'},
   {title: 'GitHub', icon: '/vite.svg', link: 'https://www.github.com'},
   {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
+
+
   // 继续添加更多快捷方式
 ])
 
@@ -60,7 +73,7 @@ const cancelDialog = () => {
 const handleOutsideClick = (event) => {
   const menu = document.querySelector('.context-menu');
   if (menu && !menu.contains(event.target)) {
-    showContextMenu.value = false;
+    hideContextMenu();
   }
 };
 
@@ -150,7 +163,7 @@ onBeforeUnmount(() => {
 .shortcuts-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  //justify-content: center;
 }
 
 .shortcut-card {
@@ -185,36 +198,6 @@ onBeforeUnmount(() => {
 .plus-icon {
   font-size: 2em;
   user-select: none;
-}
-
-.context-menu {
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-}
-
-.context-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.context-menu li {
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  user-select: none; /* 禁用文本选择，防止出现光标 */
-}
-
-.context-menu li:focus {
-  outline: none; /* 移除点击后可能出现的默认焦点样式 */
-}
-
-.context-menu li:hover {
-  background-color: #f0f0f0;
 }
 
 </style>
