@@ -25,17 +25,6 @@ const contextMenuVisible = ref(false);
 const contextMenuPosition = ref({x: 0, y: 0});
 const selectedItem = ref(null);
 
-// 搜索框输入内容
-const searchQuery = ref('');
-
-// 提交搜索表单
-const submitSearch = () => {
-  if (searchQuery.value.trim() !== '') {
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery.value)}`;
-    window.open(googleSearchUrl, '_blank');
-  }
-};
-
 
 const openAddDialog = () => {
   isEdit.value = false;
@@ -74,17 +63,6 @@ const handleOutsideClick = (event) => {
     showContextMenu.value = false;
   }
 };
-
-// 点击菜单项
-const onMenuItemClick = (action) => {
-  if (action === 'edit') {
-    openEditDialog(selectedShortcutIndex.value);
-  } else if (action === 'delete') {
-    deleteShortcut(selectedShortcutIndex.value);
-  }
-  showContextMenu.value = false; // 隐藏菜单
-};
-
 
 // 打开右击菜单
 const showContextMenu = (event, item, index) => {
