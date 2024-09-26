@@ -115,4 +115,8 @@ onUnmounted(() => {
 .dialog-actions button:last-child {
   background-color: #ccc;
 }
+.dialog h3 {
+  color: black;
+  outline: none; /* 去除聚焦样式 */
+}
 </style>

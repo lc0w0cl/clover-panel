@@ -1,37 +1,67 @@
 <script setup>
 import ShortcutCard from './components/ShortcutCard.vue';
-import {onBeforeUnmount, onMounted, ref} from "vue";
+import {onBeforeUnmount, onMounted, reactive, ref} from "vue";
 import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
 import SearchBar from './components/SearchBar.vue'; //引入 SearchBar 组件
 import ContextMenu from "./components/ContextMenu.vue";
+import {computed} from "vue";
 
 
-const shortcuts = ref([
-  {title: 'Google', icon: '/vite.svg', link: 'https://www.google.com'},
-  {title: 'YouTube', icon: '/src/assets/vue.svg', link: 'https://www.youtube.com'},
-  {title: 'GitHub', icon: '/vite.svg', link: 'https://www.github.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-  {title: 'Twitter', icon: '/src/assets/vue.svg', link: 'https://www.twitter.com'},
-
-
-  // 继续添加更多快捷方式
+const shortcutsGroup = ref([
+  {groupName: '吴彦祖',order:1,shortcuts:[
+      {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
+      {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
+      {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      // 继续添加更多快捷方式
+    ]},
+  {groupName: '如来佛祖',order: 2,shortcuts:[
+      {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
+      {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
+      {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      // 继续添加更多快捷方式
+    ] }
 ])
 
 // 控制对话框显示与隐藏
 const showDialog = ref(false);
 const isEdit = ref(false);
 const selectedShortcutIndex = ref(null);
+const selectedGroupShortcutIndex = ref(null);
 const initialData = ref({title: '', icon: '', link: ''});
+
+const dialogFormVisible = ref(false)
+const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
+
+const form = reactive({
+  title: '',
+  internalNetwork: '',
+  privateNetwork: '',
+  icon: ''
+})
 
 // 控制上下文菜单的显示与位置
 const contextMenuVisible = ref(false);
@@ -39,35 +69,29 @@ const contextMenuPosition = ref({x: 0, y: 0});
 const selectedItem = ref(null);
 
 
-const openAddDialog = () => {
-  isEdit.value = false;
-  initialData.value = {title: '', icon: '', link: ''};
-  showDialog.value = true;
-};
-
-const openEditDialog = (index) => {
-  isEdit.value = true;
-  selectedShortcutIndex.value = index;
-  initialData.value = {...shortcuts.value[index]};
-  showDialog.value = true;
-};
-
-const saveShortcut = (newData) => {
+const saveShortcut = () => {
   if (isEdit.value && selectedShortcutIndex.value !== null) {
-    shortcuts.value[selectedShortcutIndex.value] = {...newData};
+    shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
   } else {
-    shortcuts.value.push({...newData});
+    shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form})
   }
-  showDialog.value = false;
+  dialogFormVisible.value = false;
+
+  //清理form对象
+  resetForm()
 };
 
-const deleteShortcut = (index) => {
-  shortcuts.value.splice(index, 1);
+// 重置表单内容
+const resetForm = () => {
+  form.title = '';
+  form.internalNetwork = '';
+  form.privateNetwork = '';
+  form.icon = '';
+};
+const deleteShortcut = (groupIndex,index) => {
+  shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
 };
 
-const cancelDialog = () => {
-  showDialog.value = false;
-};
 
 // 点击页面任意位置时关闭右键菜单
 const handleOutsideClick = (event) => {
@@ -78,24 +102,27 @@ const handleOutsideClick = (event) => {
 };
 
 // 打开右击菜单
-const showContextMenu = (event, item, index) => {
+const showContextMenu = (event, item, groupIndex,index) => {
   contextMenuVisible.value = true;
   contextMenuPosition.value = {x: event.clientX, y: event.clientY};
   selectedItem.value = item;
   selectedShortcutIndex.value = index;
+  selectedGroupShortcutIndex.value = groupIndex
 };
 
 
 // ContextMenu右击事件监听回调
 const editItem = () => {
   // 在这里添加编辑逻辑，比如打开编辑弹窗
-  openEditDialog(selectedShortcutIndex.value);
+  isEdit.value = true;
+  dialogFormVisible.value = true;
+  Object.assign(form,selectedItem.value)
   console.log('Edit:', selectedItem.value);
 };
 
 const removeItem = () => {
   // 在这里添加删除逻辑
-  deleteShortcut(selectedShortcutIndex.value);
+  deleteShortcut(selectedGroupShortcutIndex.value,selectedShortcutIndex.value);
   console.log('Remove:', selectedItem.value);
 };
 
@@ -112,7 +139,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick);
 });
-
 </script>
 
 <template>
@@ -122,18 +148,21 @@ onBeforeUnmount(() => {
     <SearchBar/>
 
     <!-- 现有的导航展示 -->
-    <div class="shortcuts-container">
-      <ShortcutCard
-          v-for="(item, index) in shortcuts"
-          :key="item.title"
-          :title="item.title"
-          :icon="item.icon"
-          :link="item.link"
-          @contextmenu.prevent="showContextMenu($event, item,index)"
-      />
-      <!-- "+" 添加新导航按钮 -->
-      <div class="shortcut-card add-card" @click="openAddDialog">
-        <div class="plus-icon">+</div>
+    <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+      {{itemGroup.groupName}}
+      <div class="shortcuts-container">
+        <ShortcutCard
+            v-for="(item, index) in itemGroup.shortcuts"
+            :key="item.title"
+            :title="item.title"
+            :icon="item.icon"
+            :link="item.link"
+            @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+        />
+        <!-- "+" 添加新导航按钮 -->
+        <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
+          <div class="plus-icon">+</div>
+        </div>
       </div>
     </div>
 
@@ -143,8 +172,37 @@ onBeforeUnmount(() => {
         :isEdit="isEdit"
         :initialData="initialData"
         @save="saveShortcut"
-        @cancel="cancelDialog"
+        @cancel="resetForm"
     />
+
+<!--    新增/编辑导航栏-->
+    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" >
+      <el-form :model="form">
+        <el-form-item label="" >
+          <span>名称</span>
+          <el-input v-model="form.title" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="">
+          <span>图标</span>
+          <el-input v-model="form.icon" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="">
+          <span>公网地址</span>
+          <el-input v-model="form.internalNetwork" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="">
+          <span>内网地址</span>
+          <el-input v-model="form.privateNetwork" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="saveShortcut">
+            保存
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
     <!--    右击菜单-->
     <ContextMenu
