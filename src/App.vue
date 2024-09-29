@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import ShortcutCard from './components/ShortcutCard.vue';
 import {onBeforeUnmount, onMounted, reactive, ref} from "vue";
 import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
@@ -56,11 +56,28 @@ const initialData = ref({title: '', icon: '', link: ''});
 const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
 
-const form = reactive({
+
+interface RuleForm {
+  title: string
+  internalNetwork: string
+  privateNetwork: string
+  icon: string
+}
+
+const ruleFormRef = ref<FormInstance>()
+
+const form = reactive<RuleForm>({
   title: '',
   internalNetwork: '',
   privateNetwork: '',
   icon: ''
+})
+
+const rules = reactive<FormRules<RuleForm>>({
+  title: [
+    {required: true, message: '请输入导航名称', trigger: 'blur'}
+  ],
+  internalNetwork: [{required: true, message: '请输入公网链接', trigger: 'blur'}]
 })
 
 // 控制上下文菜单的显示与位置
@@ -92,6 +109,21 @@ const deleteShortcut = (groupIndex,index) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
 };
 
+const submitForm = async (formEl: FormInstance | undefined) => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      console.log('submit!')
+    } else {
+      console.log('error submit!', fields)
+    }
+  })
+}
+
+// const resetForm = (formEl: FormInstance | undefined) => {
+//   if (!formEl) return
+//   formEl.resetFields()
+// }
 
 // 点击页面任意位置时关闭右键菜单
 const handleOutsideClick = (event) => {
@@ -177,8 +209,8 @@ onBeforeUnmount(() => {
 
 <!--    新增/编辑导航栏-->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" >
-      <el-form :model="form">
-        <el-form-item label="" >
+      <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
+        <el-form-item label="" prop="title">
           <span>名称</span>
           <el-input v-model="form.title" autocomplete="off" />
         </el-form-item>
@@ -186,18 +218,18 @@ onBeforeUnmount(() => {
           <span>图标</span>
           <el-input v-model="form.icon" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="">
+        <el-form-item label="" prop="internalNetwork">
           <span>公网地址</span>
           <el-input v-model="form.internalNetwork" autocomplete="off" />
         </el-form-item>
         <el-form-item label="">
           <span>内网地址</span>
-          <el-input v-model="form.privateNetwork" autocomplete="off" />
+          <el-input v-model="form.privateNetwork" autocomplete="off"  style=""/>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="saveShortcut">
+          <el-button type="primary" @click="submitForm(ruleFormRef)">
             保存
           </el-button>
         </div>
