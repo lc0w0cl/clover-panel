@@ -8,7 +8,7 @@ import {computed} from "vue";
 
 
 const shortcutsGroup = ref([
-  {groupName: '吴彦祖',order:1,shortcuts:[
+  {groupName: '私人应用',order:1,shortcuts:[
       {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
       {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
       {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
@@ -26,7 +26,7 @@ const shortcutsGroup = ref([
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       // 继续添加更多快捷方式
     ]},
-  {groupName: '如来佛祖',order: 2,shortcuts:[
+  {groupName: '服务器',order: 2,shortcuts:[
       {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
       {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
       {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
@@ -171,6 +171,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick);
 });
+
+const getCssVarName = (type: string) => {
+  return `--el-box-shadow${type ? '-' : ''}${type}`
+}
+const type = 'dark'
 </script>
 
 <template>
@@ -180,22 +185,29 @@ onBeforeUnmount(() => {
     <SearchBar/>
 
     <!-- 现有的导航展示 -->
-    <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-      {{itemGroup.groupName}}
-      <div class="shortcuts-container">
-        <ShortcutCard
-            v-for="(item, index) in itemGroup.shortcuts"
-            :key="item.title"
-            :title="item.title"
-            :icon="item.icon"
-            :link="item.link"
-            @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-        />
-        <!-- "+" 添加新导航按钮 -->
-        <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
-          <div class="plus-icon">+</div>
-        </div>
-      </div>
+    <div
+         :style="{
+         boxShadow: `var(${getCssVarName(type)})`,
+        }">
+     <div style="margin: 40px">
+       <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+         {{itemGroup.groupName}}
+         <div class="shortcuts-container">
+           <ShortcutCard
+               v-for="(item, index) in itemGroup.shortcuts"
+               :key="item.title"
+               :title="item.title"
+               :icon="item.icon"
+               :link="item.link"
+               @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+           />
+           <!-- "+" 添加新导航按钮 -->
+           <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
+             <div class="plus-icon">+</div>
+           </div>
+         </div>
+       </div>
+     </div>
     </div>
 
     <!-- 弹出的新增/编辑对话框组件 -->
