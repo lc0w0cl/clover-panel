@@ -104,6 +104,10 @@ const resetForm = () => {
   form.internalNetwork = '';
   form.privateNetwork = '';
   form.icon = '';
+  // Reset form validation state
+  if (ruleFormRef.value) {
+    ruleFormRef.value.clearValidate();
+  }
 };
 const deleteShortcut = (groupIndex,index) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
@@ -220,7 +224,7 @@ const type = 'dark'
     />
 
 <!--    新增/编辑导航栏-->
-    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" >
+    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
       <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
         <el-form-item label="" prop="title">
           <span>名称</span>
