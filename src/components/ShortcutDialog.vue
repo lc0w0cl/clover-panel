@@ -37,6 +37,7 @@ watch(() => props.initialData, (newData) => {
 
 // 保存数据，向父组件传递保存事件并关闭对话框
 const save = () => {
+  console.log(111)
   emit('save', formData.value);
 };
 

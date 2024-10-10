@@ -1,22 +1,21 @@
 <template>
-  <div class="shortcut-card" @click="goToLink">
-    <img :src="icon" alt="icon" class="icon" />
-    <div class="title">{{ title }}</div>
+  <div class="shortcut-card" @click="handleClick(link)">
+    <img :src="icon" :alt="title" class="shortcut-icon">
+    <span class="shortcut-title">{{ title }}</span>
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    title: String,
-    icon: String,
-    link: String,
-  },
-  methods: {
-    goToLink() {
-      window.open(this.link, '_blank');
-    },
-  },
+<script setup lang="ts">
+defineProps({
+  title: String,
+  icon: String,
+  link: String
+});
+
+const handleClick = (link: string) => {
+  if (link) {
+    window.open(link, '_blank');
+  }
 };
 </script>
 

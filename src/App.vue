@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import ShortcutCard from './components/ShortcutCard.vue';
-import {onBeforeUnmount, onMounted, reactive, ref} from "vue";
+import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // 合并导入
 import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
-import SearchBar from './components/SearchBar.vue'; //引入 SearchBar 组件
+import SearchBar from './components/SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./components/ContextMenu.vue";
-import {computed} from "vue";
 
+// 添加网络模式状态
+const isInternalNetwork = ref(false);
+
+// 切换网络模式的函数
+const toggleNetworkMode = () => {
+  isInternalNetwork.value = !isInternalNetwork.value;
+};
 
 const shortcutsGroup = ref([
   {groupName: '私人应用',order:1,shortcuts:[
@@ -23,14 +29,12 @@ const shortcutsGroup = ref([
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       // 继续添加更多快捷方式
     ]},
   {groupName: '服务器',order: 2,shortcuts:[
       {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
       {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
       {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
@@ -183,8 +187,16 @@ const type = 'dark'
 </script>
 
 <template>
-
   <div>
+    <!-- 添加网络模式切换按钮 -->
+    <el-button
+      class="network-mode-toggle"
+      @click="toggleNetworkMode"
+      :type="isInternalNetwork ? 'success' : 'primary'"
+    >
+      {{ isInternalNetwork ? '内网模式' : '外网模式' }}
+    </el-button>
+
     <!-- 使用 SearchBar 组件 -->
     <SearchBar/>
 
@@ -202,7 +214,7 @@ const type = 'dark'
                :key="item.title"
                :title="item.title"
                :icon="item.icon"
-               :link="item.link"
+               :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
                @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
            />
            <!-- "+" 添加新导航按钮 -->
@@ -304,6 +316,13 @@ const type = 'dark'
 .plus-icon {
   font-size: 2em;
   user-select: none;
+}
+
+.network-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
 </style>
