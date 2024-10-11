@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import ShortcutCard from './components/ShortcutCard.vue';
 import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // 合并导入
-import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
 import SearchBar from './components/SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./components/ContextMenu.vue";
 
@@ -226,14 +225,6 @@ const type = 'dark'
      </div>
     </div>
 
-    <!-- 弹出的新增/编辑对话框组件 -->
-    <ShortcutDialog
-        :visible="showDialog"
-        :isEdit="isEdit"
-        :initialData="initialData"
-        @save="saveShortcut"
-        @cancel="resetForm"
-    />
 
 <!--    新增/编辑导航栏-->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
