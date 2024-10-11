@@ -121,6 +121,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       console.log('submit!')
+      saveShortcut()
     } else {
       console.log('error submit!', fields)
     }
