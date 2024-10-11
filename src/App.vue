@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import ShortcutCard from './components/ShortcutCard.vue';
 import {onBeforeUnmount, onMounted, reactive, ref} from "vue";
-import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
 import SearchBar from './components/SearchBar.vue'; //引入 SearchBar 组件
 import ContextMenu from "./components/ContextMenu.vue";
 import {computed} from "vue";
