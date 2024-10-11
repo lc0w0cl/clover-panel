@@ -16,6 +16,9 @@
     "vue": "^3.4.37"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.5",
     "@vitejs/plugin-vue": "^5.1.2",
     "ts-loader": "^9.5.1",
     "tslint": "^6.1.3",
