@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import ShortcutCard from './components/ShortcutCard.vue';
-import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // 合并导入
+import {onBeforeUnmount, onMounted, reactive, ref} from "vue";
 import ShortcutDialog from './components/ShortcutDialog.vue'; // 引入新增/编辑组件
-import SearchBar from './components/SearchBar.vue'; // 引入 SearchBar 组件
+import SearchBar from './components/SearchBar.vue'; //引入 SearchBar 组件
 import ContextMenu from "./components/ContextMenu.vue";
+import {computed} from "vue";
 
-// 添加网络模式状态
-const isInternalNetwork = ref(false);
-
-// 切换网络模式的函数
-const toggleNetworkMode = () => {
-  isInternalNetwork.value = !isInternalNetwork.value;
-};
 
 const shortcutsGroup = ref([
   {groupName: '私人应用',order:1,shortcuts:[
       {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
       {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
       {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
@@ -46,16 +41,15 @@ const shortcutsGroup = ref([
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
+      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
       // 继续添加更多快捷方式
     ] }
 ])
 
 // 控制对话框显示与隐藏
-const showDialog = ref(false);
 const isEdit = ref(false);
 const selectedShortcutIndex = ref(null);
 const selectedGroupShortcutIndex = ref(null);
-const initialData = ref({title: '', icon: '', link: ''});
 
 const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
@@ -108,10 +102,6 @@ const resetForm = () => {
   form.internalNetwork = '';
   form.privateNetwork = '';
   form.icon = '';
-  // Reset form validation state
-  if (ruleFormRef.value) {
-    ruleFormRef.value.clearValidate();
-  }
 };
 const deleteShortcut = (groupIndex,index) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
@@ -122,6 +112,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       console.log('submit!')
+      saveShortcut()
     } else {
       console.log('error submit!', fields)
     }
@@ -187,16 +178,8 @@ const type = 'dark'
 </script>
 
 <template>
-  <div>
-    <!-- 添加网络模式切换按钮 -->
-    <el-button
-      class="network-mode-toggle"
-      @click="toggleNetworkMode"
-      :type="isInternalNetwork ? 'success' : 'primary'"
-    >
-      {{ isInternalNetwork ? '内网模式' : '外网模式' }}
-    </el-button>
 
+  <div>
     <!-- 使用 SearchBar 组件 -->
     <SearchBar/>
 
@@ -214,7 +197,7 @@ const type = 'dark'
                :key="item.title"
                :title="item.title"
                :icon="item.icon"
-               :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
+               :link="item.link"
                @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
            />
            <!-- "+" 添加新导航按钮 -->
@@ -226,17 +209,9 @@ const type = 'dark'
      </div>
     </div>
 
-    <!-- 弹出的新增/编辑对话框组件 -->
-    <ShortcutDialog
-        :visible="showDialog"
-        :isEdit="isEdit"
-        :initialData="initialData"
-        @save="saveShortcut"
-        @cancel="resetForm"
-    />
 
 <!--    新增/编辑导航栏-->
-    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
+    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" >
       <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
         <el-form-item label="" prop="title">
           <span>名称</span>
@@ -316,13 +291,6 @@ const type = 'dark'
 .plus-icon {
   font-size: 2em;
   user-select: none;
-}
-
-.network-mode-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
 }
 
 </style>
