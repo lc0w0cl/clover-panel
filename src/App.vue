@@ -12,49 +12,40 @@ const toggleNetworkMode = () => {
   isInternalNetwork.value = !isInternalNetwork.value;
 };
 
-const shortcutsGroup = ref([
-  {groupName: '私人应用',order:1,shortcuts:[
-      {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
-      {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
-      {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      // 继续添加更多快捷方式
-    ]},
-  {groupName: '服务器',order: 2,shortcuts:[
-      {title: 'Google', icon: '/vite.svg', internalNetwork: 'https://www.google.com',privateNetwork: ''},
-      {title: 'YouTube', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.youtube.com',privateNetwork: ''},
-      {title: 'GitHub', icon: '/vite.svg', internalNetwork: 'https://www.github.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      {title: 'Twitter', icon: '/src/assets/vue.svg', internalNetwork: 'https://www.twitter.com',privateNetwork: ''},
-      // 继续添加更多快捷方式
-    ] }
-])
+const shortcutsGroup = ref([]); // 初始化为空数组
+
+// 从 API 获取数据
+const fetchShortcuts = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/shortcuts');
+    const data = await response.json();
+    if (data.message === "success") {
+      // 将数据转换为所需的格式
+      const groupedData = data.data.reduce((acc, item) => {
+        let group = acc.find(g => g.groupName === item.groupName);
+        if (!group) {
+          group = { groupName: item.groupName, order: item.orderNum, shortcuts: [] };
+          acc.push(group);
+        }
+        group.shortcuts.push({
+          title: item.title,
+          icon: item.icon,
+          internalNetwork: item.internalNetwork,
+          privateNetwork: item.privateNetwork
+        });
+        return acc;
+      }, []);
+      shortcutsGroup.value = groupedData;
+    }
+  } catch (error) {
+    console.error('Error fetching shortcuts:', error);
+  }
+};
 
 // 控制对话框显示与隐藏
-const showDialog = ref(false);
 const isEdit = ref(false);
 const selectedShortcutIndex = ref(null);
 const selectedGroupShortcutIndex = ref(null);
-const initialData = ref({title: '', icon: '', link: ''});
 
 const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
@@ -89,16 +80,46 @@ const contextMenuPosition = ref({x: 0, y: 0});
 const selectedItem = ref(null);
 
 
-const saveShortcut = () => {
-  if (isEdit.value && selectedShortcutIndex.value !== null) {
-    shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
-  } else {
-    shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form})
-  }
-  dialogFormVisible.value = false;
+const saveShortcut = async () => {
+  const shortcutData = {
+    groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
+    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
+    title: form.title,
+    icon: form.icon,
+    internalNetwork: form.internalNetwork,
+    privateNetwork: form.privateNetwork
+  };
 
-  //清理form对象
-  resetForm()
+  try {
+    if (isEdit.value && selectedShortcutIndex.value !== null) {
+      // 更新现有快捷方式
+      const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
+      await fetch(`http://localhost:3000/api/shortcuts/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shortcutData)
+      });
+      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
+    } else {
+      // 新增快捷方式
+      const response = await fetch('http://localhost:3000/api/shortcuts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shortcutData)
+      });
+      const data = await response.json();
+      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: data.data.id});
+    }
+  } catch (error) {
+    console.error('Error saving shortcut:', error);
+  }
+
+  dialogFormVisible.value = false;
+  resetForm();
 };
 
 // 重置表单内容
@@ -127,11 +148,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
     }
   })
 }
-
-// const resetForm = (formEl: FormInstance | undefined) => {
-//   if (!formEl) return
-//   formEl.resetFields()
-// }
 
 // 点击页面任意位置时关闭右键菜单
 const handleOutsideClick = (event) => {
@@ -173,6 +189,7 @@ const hideContextMenu = () => {
 
 // 在组件挂载时添加事件监听器，组件销毁时移除监听器
 onMounted(() => {
+  fetchShortcuts();
   window.addEventListener('click', handleOutsideClick);
 });
 
