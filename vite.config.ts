@@ -14,4 +14,13 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',  // 后端服务的地址
+        changeOrigin: true,               // 需要虚拟主机站点
+        // rewrite: (path) => path.replace(/^\/api/, '')  // 将 /api 替换为空字符串
+      }
+    }
+  }
 })
