@@ -207,9 +207,9 @@ const type = 'dark'
   <div>
     <!-- 添加网络模式切换按钮 -->
     <el-button
-      class="network-mode-toggle"
-      @click="toggleNetworkMode"
-      :type="isInternalNetwork ? 'success' : 'primary'"
+        class="network-mode-toggle"
+        @click="toggleNetworkMode"
+        :type="isInternalNetwork ? 'success' : 'primary'"
     >
       {{ isInternalNetwork ? '内网模式' : '外网模式' }}
     </el-button>
@@ -219,32 +219,32 @@ const type = 'dark'
 
     <!-- 现有的导航展示 -->
     <div
-         :style="{
+        :style="{
          boxShadow: `var(${getCssVarName(type)})`,
         }">
-     <div style="margin: 40px">
-       <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-         {{itemGroup.groupName}}
-         <div class="shortcuts-container">
-           <ShortcutCard
-               v-for="(item, index) in itemGroup.shortcuts"
-               :key="item.title"
-               :title="item.title"
-               :icon="item.icon"
-               :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
-               @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-           />
-           <!-- "+" 添加新导航按钮 -->
-           <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
-             <div class="plus-icon">+</div>
-           </div>
-         </div>
-       </div>
-     </div>
+      <div style="margin: 40px">
+        <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+          {{itemGroup.groupName}}
+          <div class="shortcuts-container">
+            <ShortcutCard
+                v-for="(item, index) in itemGroup.shortcuts"
+                :key="item.title"
+                :title="item.title"
+                :icon="item.icon"
+                :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
+                @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+            />
+            <!-- "+" 添加新导航按钮 -->
+            <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
+              <div class="plus-icon">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
 
-<!--    新增/编辑导航栏-->
+    <!--    新增/编辑导航栏-->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
       <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
         <el-form-item label="" prop="title">
