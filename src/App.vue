@@ -20,7 +20,6 @@ const fetchShortcuts = async () => {
     const response = await fetch('http://localhost:3000/api/shortcuts');
     const data = await response.json();
     if (data.message === "success") {
-      // 将数据转换为所需的格式
       const groupedData = data.data.reduce((acc, item) => {
         let group = acc.find(g => g.groupName === item.groupName);
         if (!group) {
@@ -28,6 +27,7 @@ const fetchShortcuts = async () => {
           acc.push(group);
         }
         group.shortcuts.push({
+          id: item.id,  // 确保这里获取并保存了 ID
           title: item.title,
           icon: item.icon,
           internalNetwork: item.internalNetwork,
@@ -92,18 +92,18 @@ const saveShortcut = async () => {
 
   try {
     if (isEdit.value && selectedShortcutIndex.value !== null) {
-      // 更新现有快捷方式
       const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
-      await fetch(`http://localhost:3000/api/shortcuts/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/shortcuts/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(shortcutData)
       });
+      const data = await response.json();
+      console.log('Update response:', data); // 输出服务器响应
       shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
     } else {
-      // 新增快捷方式
       const response = await fetch('http://localhost:3000/api/shortcuts', {
         method: 'POST',
         headers: {
@@ -112,6 +112,7 @@ const saveShortcut = async () => {
         body: JSON.stringify(shortcutData)
       });
       const data = await response.json();
+      console.log('Create response:', data); // 输出服务器响应
       shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: data.data.id});
     }
   } catch (error) {

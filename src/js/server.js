@@ -56,6 +56,9 @@ app.post('/api/shortcuts', (req, res) => {
 app.put('/api/shortcuts/:id', (req, res) => {
   const { title, icon, internalNetwork, privateNetwork } = req.body;
   const { id } = req.params;
+  console.log(`Updating shortcut with ID: ${id}`); // 打印 ID
+  console.log(`Received data:`, req.body); // 打印接收到的数据
+
   const sql = `UPDATE shortcuts SET title = ?, icon = ?, internalNetwork = ?, privateNetwork = ? WHERE id = ?`;
   const params = [title, icon, internalNetwork, privateNetwork, id];
   
@@ -64,6 +67,7 @@ app.put('/api/shortcuts/:id', (req, res) => {
       res.status(400).json({"error": err.message});
       return;
     }
+    console.log(`Changes made: ${this.changes}`); // 打印更新的行数
     res.json({
       "message": "success",
       "changes": this.changes
