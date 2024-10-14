@@ -3,5 +3,11 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "baseUrl": ".", // 这表示基础目录是当前目录
+    "paths": {
+      "@/*": ["src/*"] // 这里将 '@' 解析为 'src' 目录
+    }
+  }
 }

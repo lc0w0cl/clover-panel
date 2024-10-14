@@ -3,6 +3,7 @@ import ShortcutCard from './ShortcutCard.vue';
 import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // 合并导入
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
+import { ShortcutGroup } from '../model/shortcutGroup';
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -12,7 +13,7 @@ const toggleNetworkMode = () => {
   isInternalNetwork.value = !isInternalNetwork.value;
 };
 
-const shortcutsGroup = ref([]); // 初始化为空数组
+const shortcutsGroup = ref<ShortcutGroup[]>([]); // 初始化为空数组
 
 // 从 API 获取数据
 const fetchShortcuts = async () => {
@@ -20,8 +21,8 @@ const fetchShortcuts = async () => {
     const response = await fetch('/api/shortcuts');  // 移除了 http://localhost:3000
     const data = await response.json();
     if (data.message === "success") {
-      const groupedData = data.data.reduce((acc, item) => {
-        let group = acc.find(g => g.groupName === item.groupName);
+      const groupedData = data.data.reduce((acc: any, item: any) => {
+        let group = acc.find((g: { groupName: any; })=> g.groupName === item.groupName);
         if (!group) {
           group = { groupName: item.groupName, order: item.orderNum, shortcuts: [] };
           acc.push(group);
@@ -44,8 +45,8 @@ const fetchShortcuts = async () => {
 
 // 控制对话框显示与隐藏
 const isEdit = ref(false);
-const selectedShortcutIndex = ref(null);
-const selectedGroupShortcutIndex = ref(null);
+const selectedShortcutIndex = ref<number>(-1);
+const selectedGroupShortcutIndex = ref<number>(-1);
 
 const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
@@ -81,46 +82,48 @@ const selectedItem = ref(null);
 
 
 const saveShortcut = async () => {
+
   const shortcutData = {
-    groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
-    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
-    title: form.title,
-    icon: form.icon,
-    internalNetwork: form.internalNetwork,
-    privateNetwork: form.privateNetwork
-  };
+      groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
+      orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
+      title: form.title,
+      icon: form.icon,
+      internalNetwork: form.internalNetwork,
+      privateNetwork: form.privateNetwork
+    };
 
-  try {
-    if (isEdit.value && selectedShortcutIndex.value !== null) {
-      const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
-      const response = await fetch(`/api/shortcuts/${id}`, {  // 移除了 http://localhost:3000
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(shortcutData)
-      });
-      const data = await response.json();
-      console.log('Update response:', data);
-      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
-    } else {
-      const response = await fetch('/api/shortcuts', {  // 移除了 http://localhost:3000
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(shortcutData)
-      });
-      const data = await response.json();
-      console.log('Create response:', data);
-      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: data.data.id});
+    try {
+      if (isEdit.value && selectedShortcutIndex.value !== null) {
+        const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
+        const response = await fetch(`/api/shortcuts/${id}`, {  // 移除了 http://localhost:3000
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(shortcutData)
+        });
+        const data = await response.json();
+        console.log('Update response:', data);
+        shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
+      } else {
+        const response = await fetch('/api/shortcuts', {  // 移除了 http://localhost:3000
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(shortcutData)
+        });
+        const data = await response.json();
+        console.log('Create response:', data);
+        shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: data.data.id});
+      }
+    } catch (error) {
+      console.error('Error saving shortcut:', error);
     }
-  } catch (error) {
-    console.error('Error saving shortcut:', error);
-  }
 
-  dialogFormVisible.value = false;
-  resetForm();
+    dialogFormVisible.value = false;
+    resetForm();
+    
 };
 
 // 重置表单内容
@@ -134,13 +137,14 @@ const resetForm = () => {
     ruleFormRef.value.clearValidate();
   }
 };
-const deleteShortcut = (groupIndex,index) => {
+
+const deleteShortcut = (groupIndex: number,index: number) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
 };
 
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate((valid: any, fields: any) => {
     if (valid) {
       console.log('submit!')
       saveShortcut()
@@ -151,7 +155,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
 }
 
 // 点击页面任意位置时关闭右键菜单
-const handleOutsideClick = (event) => {
+const handleOutsideClick = (event: { target: Node | null; }) => {
   const menu = document.querySelector('.context-menu');
   if (menu && !menu.contains(event.target)) {
     hideContextMenu();
@@ -159,7 +163,7 @@ const handleOutsideClick = (event) => {
 };
 
 // 打开右击菜单
-const showContextMenu = (event, item, groupIndex,index) => {
+const showContextMenu = (event: MouseEvent, item: any, groupIndex: number, index: number) => {
   contextMenuVisible.value = true;
   contextMenuPosition.value = {x: event.clientX, y: event.clientY};
   selectedItem.value = item;
@@ -191,11 +195,11 @@ const hideContextMenu = () => {
 // 在组件挂载时添加事件监听器，组件销毁时移除监听器
 onMounted(() => {
   fetchShortcuts();
-  window.addEventListener('click', handleOutsideClick);
+  window.addEventListener('click', handleOutsideClick as EventListener);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('click', handleOutsideClick);
+  window.removeEventListener('click', handleOutsideClick as EventListener);
 });
 
 const getCssVarName = (type: string) => {
@@ -245,6 +249,8 @@ const type = 'dark'
     </div>
 
 
+
+    
     <!--    新增/编辑导航栏-->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
       <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
@@ -291,7 +297,7 @@ const type = 'dark'
 .shortcuts-container {
   display: flex;
   flex-wrap: wrap;
-  //justify-content: center;
+  /* //justify-content: center; */
 }
 
 .shortcut-card {
@@ -316,7 +322,7 @@ const type = 'dark'
   display: flex;
   justify-content: center;
   align-items: center;
-  //background-color: #f0f0f0;
+  /* //background-color: #f0f0f0; */
   color: #42b883;
   font-size: 2em;
   font-weight: bold;
