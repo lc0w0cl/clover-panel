@@ -29,6 +29,7 @@ export default {
         console.log('Login response:', response.data);
         if (response.data.message === 'Login successful') {
           // 处理登录成功的情况，例如跳转到主页或显示登录成功消息
+          localStorage.setItem('userLoggedIn','true');
           this.$router.push('/home');
         } else {
           // 显示错误消息

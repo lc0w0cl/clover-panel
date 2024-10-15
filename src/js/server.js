@@ -99,6 +99,24 @@ app.put('/api/shortcuts/group/:groupName', (req, res) => {
   });
 });
 
+// 删除快捷方式
+app.delete('/api/shortcuts/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = `DELETE FROM shortcuts WHERE id = ?`;
+  
+  db.run(sql, id, function(err) {
+    if (err) {
+      res.status(400).json({"error": err.message});
+      return;
+    }
+    console.log(`Deleted shortcut with ID: ${id}`); // 打印删除的快捷方式 ID
+    res.json({
+      "message": "success",
+      "changes": this.changes  // 返回被删除的行数
+    });
+  });
+});
+
 
 
 

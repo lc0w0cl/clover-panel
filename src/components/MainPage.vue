@@ -179,10 +179,19 @@ const editItem = () => {
   console.log('Edit:', selectedItem.value);
 };
 
-const removeItem = () => {
-  // 在这里添加删除逻辑
-  deleteShortcut(selectedGroupShortcutIndex.value,selectedShortcutIndex.value);
-  console.log('Remove:', selectedItem.value);
+const removeItem = async () => {
+  const groupIndex = selectedGroupShortcutIndex.value;
+  const index = selectedShortcutIndex.value;
+  const shortcutId = shortcutsGroup.value[groupIndex].shortcuts[index].id;
+
+  try {
+    const response = await axios.delete(`/api/shortcuts/${shortcutId}`);
+    console.log('Remove response:', response.data);
+    // 从本地状态中删除快捷方式
+    deleteShortcut(groupIndex, index);
+  } catch (error) {
+    console.error('Error removing shortcut:', error);
+  }
 };
 
 const hideContextMenu = () => {
