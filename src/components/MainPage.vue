@@ -4,6 +4,7 @@ import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // �
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
 import { ShortcutGroup } from '../model/shortcutGroup';
+import axios from 'axios'; // 引入axios
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -15,28 +16,38 @@ const toggleNetworkMode = () => {
 
 const shortcutsGroup = ref<ShortcutGroup[]>([]); // 初始化为空数组
 
-// 从 API 获取数据
+// 使用axios获取数据并优化数据处理
 const fetchShortcuts = async () => {
   try {
-    const response = await fetch('/api/shortcuts');  // 移除了 http://localhost:3000
-    const data = await response.json();
+    const response = await axios.get('/api/shortcuts');
+    const data = response.data;
     if (data.message === "success") {
-      const groupedData = data.data.reduce((acc: any, item: any) => {
-        let group = acc.find((g: { groupName: any; })=> g.groupName === item.groupName);
-        if (!group) {
-          group = { groupName: item.groupName, order: item.orderNum, shortcuts: [] };
-          acc.push(group);
+      const groupsMap = new Map();
+      data.data.forEach((item) => {
+        if (!groupsMap.has(item.groupName)) {
+          groupsMap.set(item.groupName, {
+            groupName: item.groupName,
+            order: item.orderNum,
+            shortcuts: []
+          });
         }
-        group.shortcuts.push({
+        groupsMap.get(item.groupName).shortcuts.push({
           id: item.id,
           title: item.title,
           icon: item.icon,
           internalNetwork: item.internalNetwork,
-          privateNetwork: item.privateNetwork
+          privateNetwork: item.privateNetwork,
+          orderNum: item.orderNum  // 确保orderNum也被包括在内
         });
-        return acc;
-      }, []);
-      shortcutsGroup.value = groupedData;
+      });
+
+      // 对每个组的shortcuts按orderNum排序
+      groupsMap.forEach((group) => {
+        group.shortcuts.sort((a, b) => a.orderNum - b.orderNum);
+      });
+
+      // 将Map转换为数组
+      shortcutsGroup.value = Array.from(groupsMap.values());
     }
   } catch (error) {
     console.error('Error fetching shortcuts:', error);
@@ -82,48 +93,34 @@ const selectedItem = ref(null);
 
 
 const saveShortcut = async () => {
-
   const shortcutData = {
-      groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
-      orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
-      title: form.title,
-      icon: form.icon,
-      internalNetwork: form.internalNetwork,
-      privateNetwork: form.privateNetwork
-    };
+    groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
+    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
+    title: form.title,
+    icon: form.icon,
+    internalNetwork: form.internalNetwork,
+    privateNetwork: form.privateNetwork
+  };
 
-    try {
-      if (isEdit.value && selectedShortcutIndex.value !== null) {
-        const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
-        const response = await fetch(`/api/shortcuts/${id}`, {  // 移除了 http://localhost:3000
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(shortcutData)
-        });
-        const data = await response.json();
-        console.log('Update response:', data);
-        shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
-      } else {
-        const response = await fetch('/api/shortcuts', {  // 移除了 http://localhost:3000
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(shortcutData)
-        });
-        const data = await response.json();
-        console.log('Create response:', data);
-        shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: data.data.id});
-      }
-    } catch (error) {
-      console.error('Error saving shortcut:', error);
+  try {
+    if (isEdit.value && selectedShortcutIndex.value !== null) {
+      const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
+      // 使用axios进行PUT请求
+      const response = await axios.put(`/api/shortcuts/${id}`, shortcutData);
+      console.log('Update response:', response.data);
+      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
+    } else {
+      // 使用axios进行POST请求
+      const response = await axios.post('/api/shortcuts', shortcutData);
+      console.log('Create response:', response.data);
+      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: response.data.data.id});
     }
+  } catch (error) {
+    console.error('Error saving shortcut:', error);
+  }
 
-    dialogFormVisible.value = false;
-    resetForm();
-    
+  dialogFormVisible.value = false;
+  resetForm();
 };
 
 // 重置表单内容
@@ -225,11 +222,11 @@ const type = 'dark'
     <!-- 现有的导航展示 -->
     <div
         :style="{
-         boxShadow: `var(${getCssVarName(type)})`,
-        }">
-      <div style="margin: 40px">
+         boxShadow: `var(${getCssVarName(type)})`,textAlign: `left`,borderRadius: `20px`,padding: `40px`
+        }" >
+
         <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-          {{itemGroup.groupName}}
+          <span>{{itemGroup.groupName}}</span>
           <div class="shortcuts-container">
             <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
@@ -245,7 +242,6 @@ const type = 'dark'
             </div>
           </div>
         </div>
-      </div>
     </div>
 
 
@@ -298,24 +294,6 @@ const type = 'dark'
   display: flex;
   flex-wrap: wrap;
   /* //justify-content: center; */
-}
-
-.shortcut-card {
-  width: 100px;
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 10px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  transition: transform 0.2s;
-}
-
-.shortcut-card:hover {
-  transform: scale(1.05);
 }
 
 .add-card {

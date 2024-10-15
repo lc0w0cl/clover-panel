@@ -25,6 +25,8 @@ db.serialize(() => {
       console.log("Table created successfully.");
     }
   });
+
+  db.run(`CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)`)
 });
 
 // 关闭数据库连接

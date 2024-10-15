@@ -1,12 +1,10 @@
 import express from 'express';
 import sqlite3 from 'sqlite3';
-import cors from 'cors';
+import bcrypt from 'bcrypt'
 
 const app = express();
 const port = 3000;
 
-// 使用 CORS 中间件
-app.use(cors());
 
 // 打开数据库连接
 let db = new sqlite3.Database('./shortcuts.db', (err) => {
@@ -74,6 +72,53 @@ app.put('/api/shortcuts/:id', (req, res) => {
     });
   });
 });
+
+
+
+// 注册新用户
+app.post('/api/register', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
+    db.run(sql, [username, hashedPassword], function(err) {
+      if (err) {
+        return res.status(400).send({ error: err.message });
+      }
+      res.send({ message: 'User registered', id: this.lastID });
+    });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+})
+
+
+// 用户登录
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  const sql = 'SELECT password FROM users WHERE username = ?';
+
+  db.get(sql, [username], async (err, row) => {
+    if (err) {
+      return res.status(400).send({ error: err.message });
+    }
+    if (row) {
+      const match = await bcrypt.compare(password, row.password);
+      if (match) {
+        res.send({ message: 'Login successful' });
+      } else {
+        res.send({ message: 'Login failed' });
+      }
+    } else {
+      res.status(404).send({ message: 'User not found' });
+    }
+  });
+});
+
+
+
+
 
 // 启动服务器
 app.listen(port, () => {

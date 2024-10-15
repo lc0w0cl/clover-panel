@@ -29,8 +29,8 @@ const handleClick = (link: string) => {
   justify-content: center;
   margin: 10px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  /* border: 1px solid #ccc;
+  border-radius: 10px; */
   transition: transform 0.2s;
   user-select: none; /* 禁止文本选择 */
 }
@@ -48,5 +48,10 @@ const handleClick = (link: string) => {
 .title {
   margin-top: 5px;
   font-weight: bold;
+}
+.shortcut-icon {
+  width: 35px;
+  height: 35px;
+  margin-bottom: 10px;
 }
 </style>
