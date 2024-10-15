@@ -5,6 +5,7 @@ import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
 import { ShortcutGroup } from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
+import { VueDraggable } from 'vue-draggable-plus'
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -225,17 +226,21 @@ const type = 'dark'
          boxShadow: `var(${getCssVarName(type)})`,textAlign: `left`,borderRadius: `20px`,padding: `40px`
         }" >
 
+
         <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
           <span>{{itemGroup.groupName}}</span>
+   
           <div class="shortcuts-container">
-            <ShortcutCard
+            <VueDraggable ref="el" v-model="itemGroup.shortcuts" direction="horizontal" style="display: flex;">
+              <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
                 :key="item.title"
                 :title="item.title"
                 :icon="item.icon"
                 :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
                 @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-            />
+                 />
+            </VueDraggable>
             <!-- "+" 添加新导航按钮 -->
             <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
               <div class="plus-icon">+</div>
