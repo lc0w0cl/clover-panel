@@ -5,7 +5,7 @@ import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
 import { ShortcutGroup } from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
-import { VueDraggable } from 'vue-draggable-plus'
+import { VueDraggable,DraggableEvent } from 'vue-draggable-plus'
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -190,6 +190,33 @@ const hideContextMenu = () => {
 };
 
 
+
+const dragCompleted = async(groupName: string) =>{
+  // 给数据排序
+  const group = shortcutsGroup.value.find(g => g.groupName === groupName);
+  // 给组内的顺序编号
+  
+  if (group) {
+    // 重新给组内的元素按顺序编号
+    group.shortcuts.forEach((shortcut: { orderNum: any; }, index: number) => {
+      shortcut.orderNum = index + 1;  // 从1开始编号
+    });
+    console.log('重新编号后的组:', group.shortcuts);
+
+    // 更新数据库中的数据
+    try {
+      const response = await axios.put(`/api/shortcuts/group/${groupName}`, {
+        shortcuts: group.shortcuts
+      });
+      console.log('数据库更新成功:', response.data);
+    } catch (error) {
+      console.error('数据库更新失败:', error);
+    }
+  } else {
+    console.log('没有找到匹配的组');
+  }
+}
+
 // 在组件挂载时添加事件监听器，组件销毁时移除监听器
 onMounted(() => {
   fetchShortcuts();
@@ -231,7 +258,7 @@ const type = 'dark'
           <span>{{itemGroup.groupName}}</span>
    
           <div class="shortcuts-container">
-            <VueDraggable ref="el" v-model="itemGroup.shortcuts" direction="horizontal" style="display: flex;">
+            <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;" @update="dragCompleted(itemGroup.groupName)">
               <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
                 :key="item.title"

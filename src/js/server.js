@@ -73,6 +73,34 @@ app.put('/api/shortcuts/:id', (req, res) => {
   });
 });
 
+// 更新特定组内的快捷方式
+app.put('/api/shortcuts/group/:groupName', (req, res) => {
+  const { groupName } = req.params;
+  const shortcuts = req.body.shortcuts;
+
+  // 为每个快捷方式构建更新语句
+  shortcuts.forEach((shortcut, index) => {
+    const sql = `UPDATE shortcuts SET orderNum = ? WHERE id = ? AND groupName = ?`;
+    const params = [shortcut.orderNum, shortcut.id, groupName];
+
+    db.run(sql, params, function(err) {
+      if (err) {
+        console.error(`更新失败: ${err.message}`);
+        res.status(400).json({"error": err.message});
+        return;
+      }
+    });
+  });
+
+  // 响应客户端
+  res.json({
+    "message": "快捷方式更新成功",
+    "groupName": groupName
+  });
+});
+
+
+
 
 
 // 注册新用户
