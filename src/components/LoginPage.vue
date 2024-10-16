@@ -1,9 +1,22 @@
 <template>
   <div class="login-container">
-    <h1>请输入密码</h1>
-    <input type="text" v-model="username" placeholder="用户名">
-    <input type="password" v-model="password" placeholder="密码" @keyup.enter="login">
-    <button @click="login" :disabled="isLoading">登录</button>
+    <h1>CLOVER</h1>
+      <el-input
+      v-model="username"
+      style="width: 240px"
+      placeholder="用户名"
+    />
+    <div style="margin: 20px 0" />
+      <el-input
+      v-model="password"
+      style="width: 240px"
+      type="password"
+      placeholder="密码"
+      show-password
+      @keyup.enter="login"
+    />
+    <div style="margin: 20px 0" />
+    <el-button type="primary" @click="login" :disabled="isLoading">登录</el-button>
     <p v-if="errorMessage">{{ errorMessage }}</p>
   </div>
 </template>
