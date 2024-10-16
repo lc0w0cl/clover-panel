@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router';
 import MainPage from '../components/MainPage.vue';
 import LoginPage from '../components/LoginPage.vue';
+import store from '../vuex/index';
 
 const routes = [
   {
@@ -27,7 +28,7 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
   // 检查路由是否需要认证
   if (to.matched.some(record => record.meta.requiresAuth)) {
     // 这里应该添加您的登录状态检查逻辑，例如检查本地存储或 Vuex 状态
-    if (!isLoggedIn()) {
+    if (!store.state.isAuthenticated) {
       // 如果用户未登录，重定向到登录页面
       next({ name: 'Login' });
     } else {
@@ -39,12 +40,5 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
     next();
   }
 });
-
-function isLoggedIn() {
-  // 这里应该实现检查用户是否已登录的逻辑
-  // 例如检查 localStorage 或 Vuex 状态
-  // 这里只是一个示例
-  return localStorage.getItem('userLoggedIn') === 'true';
-}
 
 export default router;
