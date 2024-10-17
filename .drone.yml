@@ -70,7 +70,7 @@ steps:
       port: 22
       command_timeout: 4m
       script:
-        - mkdir -p /panel
+        - mkdir -p ~/panel
   - name: upload yml
     image: appleboy/drone-scp
     depends_on: [create directory]
@@ -82,7 +82,7 @@ steps:
       key:
         from_secret: ssh_key  # 引用 SSH 密钥
       source: ./docker-compose.yml
-      target: /panel
+      target: ~/panel
   - name: deploy
     image: appleboy/drone-ssh
     depends_on: [upload yml]
@@ -97,4 +97,4 @@ steps:
       command_timeout: 4m
       script:
         - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-        - docker compose -f /panel/docker-compose.yml up -d --force-recreate
+        - docker compose -f ~/panel/docker-compose.yml up -d --force-recreate
