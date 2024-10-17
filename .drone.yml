@@ -55,7 +55,7 @@ name: deploy
 depends_on:
   - build
 clone:
-  disable: true
+  disable: false
 
 steps:
   - name: create directory
@@ -95,4 +95,4 @@ steps:
       command_timeout: 4m
       script:
         - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-        - docker compose -f /home/clover/panel/docker-compose.yml up -d --force-recreate
+        - docker compose -f /panel/docker-compose.yml up -d --force-recreate
