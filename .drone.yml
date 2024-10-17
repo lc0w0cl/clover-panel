@@ -22,6 +22,7 @@ steps:
         path: /var/run/docker.sock # 挂载宿主机的docker
     command:
       - pwd
+      - ls /drone/src
       - npm install
       - npm run build
   - name: build-image
