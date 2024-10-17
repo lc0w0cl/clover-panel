@@ -8,9 +8,9 @@ RUN apk add --no-cache nginx supervisor
 WORKDIR /app
 
 # 复制构建的文件和服务器代码到工作目录
-COPY  dist /usr/share/nginx/html
-COPY  server ./server
-COPY  package*.json ./
+COPY  /drone/src/dist /usr/share/nginx/html
+COPY  /drone/src/server ./server
+COPY  /drone/src/package*.json ./
 
 # 复制 assets/logo 目录到 Nginx 的静态文件目录
 COPY src/assets/logo /usr/share/nginx/html/logo
