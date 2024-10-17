@@ -21,10 +21,11 @@ steps:
     volumes:
       - name: node_modules
         path: /drone/src/node_modules
-    command:
+    commands:
       - pwd
       - npm install
       - npm run build
+
   - name: build-image
     image: plugins/docker
     depends_on: [build-project]
