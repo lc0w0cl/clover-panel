@@ -22,7 +22,7 @@ steps:
       password:
         from_secret: DOCKER_PASSWORD
       dockerfile: ./Dockerfile
-      repo: cOw0c/clover-panel
+      repo: c0w0c/clover-panel
       tags:
         - latest
 
