@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router';
-import MainPage from '../components/MainPage.vue';
-import LoginPage from '../components/LoginPage.vue';
-import store from '../vuex/index';
+import MainPage from '../views/MainPage.vue';
+import LoginPage from '../views/LoginPage.vue';
+import { isAuthenticated } from '../auth'; // 引入认证管理模块
 
 const routes = [
   {
@@ -27,8 +27,8 @@ const router = createRouter({
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   // 检查路由是否需要认证
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    // 这里应该添加您的登录状态检查逻辑，例如检查本地存储或 Vuex 状态
-    if (!store.state.isAuthenticated) {
+    // 使用auth模块检查认证状态
+    if (!isAuthenticated()) {
       // 如果用户未登录，重定向到登录页面
       next({ name: 'Login' });
     } else {

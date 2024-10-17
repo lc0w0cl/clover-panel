@@ -23,7 +23,7 @@
 
 <script>
 import axios from 'axios';
-import { mapActions } from 'vuex';
+import { login } from '../auth/index';
 
 export default {
   data() {
@@ -35,7 +35,6 @@ export default {
     };
   },
   methods: {
-    ...mapActions(['loginUser']),
     async login() {
       this.isLoading = true;
       this.errorMessage = '';
@@ -46,8 +45,7 @@ export default {
         });
         console.log('Login response:', response.data);
         if (response.data.message === 'Login successful') {
-          // 使用Vuex action来设置认证状态
-          this.loginUser();
+          login();
           this.$router.push('/home');
         } else {
           this.errorMessage = '登录失败，请检查用户名和密码。';
