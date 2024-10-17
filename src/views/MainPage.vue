@@ -5,7 +5,8 @@ import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
 import { ShortcutGroup } from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
-import { VueDraggable,DraggableEvent } from 'vue-draggable-plus'
+import { VueDraggable } from 'vue-draggable-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -24,6 +25,7 @@ const fetchShortcuts = async () => {
     const data = response.data;
     if (data.message === "success") {
       const groupsMap = new Map();
+       // @ts-ignore
       data.data.forEach((item) => {
         if (!groupsMap.has(item.groupName)) {
           groupsMap.set(item.groupName, {
@@ -44,6 +46,7 @@ const fetchShortcuts = async () => {
 
       // 对每个组的shortcuts按orderNum排序
       groupsMap.forEach((group) => {
+        // @ts-ignore
         group.shortcuts.sort((a, b) => a.orderNum - b.orderNum);
       });
 
@@ -65,19 +68,23 @@ const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导�
 
 
 interface RuleForm {
+  id: string; // 添加 id 属性
   title: string
   internalNetwork: string
   privateNetwork: string
-  icon: string
+  icon: string,
+  orderNum: number
 }
 
 const ruleFormRef = ref<FormInstance>()
 
 const form = reactive<RuleForm>({
+  id: '',
   title: '',
   internalNetwork: '',
   privateNetwork: '',
-  icon: ''
+  icon: '',
+  orderNum: 99 // 确保包含 orderNum 属性
 })
 
 const rules = reactive<FormRules<RuleForm>>({
@@ -126,6 +133,7 @@ const saveShortcut = async () => {
 
 // 重置表单内容
 const resetForm = () => {
+  form.id = '';
   form.title = '';
   form.internalNetwork = '';
   form.privateNetwork = '';

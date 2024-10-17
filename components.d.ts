@@ -7,17 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ContextMenu: typeof import('./src/views/ContextMenu.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElDialog: typeof import('element-plus/es')['ElDialog']
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElInput: typeof import('element-plus/es')['ElInput']
-    LoginPage: typeof import('./src/views/LoginPage.vue')['default']
-    MainPage: typeof import('./src/views/MainPage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SearchBar: typeof import('./src/views/SearchBar.vue')['default']
-    ShortcutCard: typeof import('./src/views/ShortcutCard.vue')['default']
   }
 }

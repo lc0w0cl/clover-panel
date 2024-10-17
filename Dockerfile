@@ -1,49 +1,52 @@
-# 使用官方Node.js镜像作为构建阶段的基础镜像
-FROM node:16 AS build-stage
+# 使用 Node.js 官方镜像作为基础镜像
+FROM node:18-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制Vue.js项目的package.json和package-lock.json
-COPY client/package*.json ./client/
-
-# 安装Vue.js项目依赖
-RUN cd client && npm install
-
-# 复制Vue.js项目文件
-COPY client ./client
-
-# 构建Vue.js项目
-RUN cd client && npm run build
-
-# 设置Node.js服务器和Nginx
-FROM node:16
-
-WORKDIR /app
-
-# 安装Nginx和supervisor
-RUN apt-get update && apt-get install -y nginx supervisor
-
-# 复制Node.js服务器的package.json和package-lock.json
+# 复制 package.json 和 package-lock.json（如果有）到工作目录
 COPY package*.json ./
 
-# 安装Node.js服务器依赖
+# 安装项目依赖
 RUN npm install
 
-# 复制Node.js服务器文件
-COPY server.js .
+# 复制项目的所有文件到工作目录
+COPY . .
 
-# 复制构建后的Vue.js项目到Node.js服务器的静态文件目录
-COPY --from=build-stage /app/client/dist ./public
+# 构建前端项目
+RUN npm run build
 
-# 复制Nginx配置文件
+# 使用 Node.js 作为基础镜像来运行后端服务
+FROM node:18-alpine
+
+# 安装 Nginx 和 Supervisor
+RUN apk add --no-cache nginx supervisor
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制构建的文件和服务器代码到工作目录
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/package*.json ./
+
+# 复制 assets/logo 目录到 Nginx 的静态文件目录
+COPY --from=builder /app/src/assets/logo /usr/share/nginx/html/logo
+
+# 安装仅生产环境所需的依赖
+RUN npm install --only=production
+
+# 复制 Nginx 配置文件
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# 复制supervisor配置文件
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# 复制站点配置文件
+COPY default.conf /etc/nginx/conf.d/default.conf
 
-# 暴露应用程序的端口
-EXPOSE 80
+# 复制 Supervisor 配置文件
+COPY supervisord.conf /etc/supervisord.conf
 
-# 启动supervisor
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# 暴露端口
+EXPOSE 80 3000
+
+# 启动 Supervisor
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]

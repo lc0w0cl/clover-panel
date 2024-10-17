@@ -1,17 +1,86 @@
 import express from 'express';
 import sqlite3 from 'sqlite3';
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt';
+import * as fs from "fs";
+import path from "node:path";
 
 const app = express();
 const port = 3000;
 
 
+// 确保数据库目录存在
+const dbDir = '/app/db';
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log('目录创建成功');
+}
+
 // 打开数据库连接
-let db = new sqlite3.Database('./shortcuts.db', (err) => {
+let db = new sqlite3.Database(path.join(dbDir,'/shortcuts.db'), (err) => {
   if (err) {
     console.error(err.message);
   }
   console.log('Connected to the shortcuts database.');
+})
+
+// 创建表并插入默认用户和数据
+db.serialize(() => {
+  // 创建 shortcuts 表
+  db.run(`CREATE TABLE IF NOT EXISTS shortcuts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    groupName TEXT,
+    orderNum INTEGER,
+    title TEXT,
+    icon TEXT,
+    internalNetwork TEXT,
+    privateNetwork TEXT
+  )`, (err) => {
+    if (err) {
+      console.error("Error creating shortcuts table:", err.message);
+    } else {
+      console.log("Shortcuts table created successfully.");
+
+      // 检查 shortcuts 表中是否有数据
+      db.get(`SELECT COUNT(*) AS count FROM shortcuts`, (err, row) => {
+        if (err) {
+          console.error("Error checking shortcuts table:", err.message);
+        } else if (row.count === 0) {
+          // 如果没有数据，插入默认数据
+          const insert = `INSERT INTO shortcuts (groupName, orderNum, title, icon, internalNetwork, privateNetwork) VALUES (?, ?, ?, ?, ?, ?)`;
+          db.run(insert, ['私人应用', 1, '百度', '/logo/百度.svg', 'https://www.baidu.com', 'private-network'], (err) => {
+            if (err) {
+              console.error("Error inserting default shortcut:", err.message);
+            } else {
+              console.log("Default shortcut inserted successfully.");
+            }
+          });
+        }
+      });
+    }
+  });
+
+  // 创建 users 表
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+  )`, (err) => {
+    if (err) {
+      console.error("Error creating users table:", err.message);
+    } else {
+      console.log("Users table created successfully.");
+
+      // 插入默认的 root 用户
+      const insert = `INSERT INTO users (username, password) VALUES (?, ?)`;
+      db.run(insert, ['root', '$2b$10$J/FTCcGrCeUL2ryvKEDWseHuS40emqWMHzIg5tJGqYa4rlKCM5pri'], (err) => {
+        if (err) {
+          console.error("Error inserting default user:", err.message);
+        } else {
+          console.log("Default root user inserted successfully.");
+        }
+      });
+    }
+  });
 });
 
 // 解析 JSON 请求体
@@ -117,10 +186,6 @@ app.delete('/api/shortcuts/:id', (req, res) => {
   });
 });
 
-
-
-
-
 // 注册新用户
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
@@ -138,7 +203,6 @@ app.post('/api/register', async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 })
-
 
 // 用户登录
 app.post('/api/login', (req, res) => {
@@ -161,10 +225,6 @@ app.post('/api/login', (req, res) => {
     }
   });
 });
-
-
-
-
 
 // 启动服务器
 app.listen(port, () => {

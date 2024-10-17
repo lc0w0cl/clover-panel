@@ -9,7 +9,10 @@
 defineProps({
   title: String,
   icon: String,
-  link: String
+  link: {
+    type: String,
+    default: ''
+  }
 });
 
 const handleClick = (link: string) => {
