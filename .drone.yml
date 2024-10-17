@@ -28,7 +28,6 @@ steps:
   - name: build-image
     image: plugins/docker
     depends_on:
-      - clone
       - build-project
     volumes:
       - name: docker
