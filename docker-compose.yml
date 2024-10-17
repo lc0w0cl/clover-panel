@@ -2,7 +2,13 @@ services:
   panel:
     image: c0w0c/clover-panel
     container_name: panel
-    ports:
-      - 82:80
+    #ports:
+    # - 82:80
+    networks:
+      - nginx
     volumes:
       - ./db:/app/db
+
+networks:
+  nginx:
+    external: true
