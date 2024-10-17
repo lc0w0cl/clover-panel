@@ -72,7 +72,7 @@ steps:
       script:
         - mkdir /panel
   - name: upload yml
-    image: plugins/scp
+    image: appleboy/drone-scp
     settings:
       host:
         from_secret: SSH_HOST
