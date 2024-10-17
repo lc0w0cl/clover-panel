@@ -11,6 +11,18 @@ volumes:
       path: /var/run/docker.sock
 
 steps:
+  - name: build-project
+    image: 18.20.4
+    depends_on:
+      - clone
+
+    volumes:
+      - name: node_modules
+        path: /drone/src/node_modules
+    command:
+      - pwd
+      - npm install
+      - npm run build
   - name: build-image
     image: plugins/docker
     volumes:
