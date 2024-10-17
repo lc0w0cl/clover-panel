@@ -9,6 +9,9 @@ volumes:
   - name: docker
     host:
       path: /var/run/docker.sock
+  - name: node_modules
+    host:
+      path: /volumes/drone/volumes/web/node_modules
 
 steps:
   - name: build-project
@@ -18,17 +21,13 @@ steps:
     volumes:
       - name: node_modules
         path: /drone/src/node_modules
-      - name: docker
-        path: /var/run/docker.sock # 挂载宿主机的docker
     command:
       - pwd
       - npm install
       - npm run build
-      - ls /drone/src
   - name: build-image
     image: plugins/docker
-    depends_on:
-      - build-project
+    depends_on: [build-project]
     volumes:
       - name: docker
         path: /var/run/docker.sock # 挂载宿主机的docker
