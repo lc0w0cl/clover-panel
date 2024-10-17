@@ -1,0 +1,8 @@
+services:
+  panel:
+    image: c0w0c/clover-panel
+    container_name: panel
+    ports:
+      - 81:80
+    volumes:
+      - ./db:/app/db

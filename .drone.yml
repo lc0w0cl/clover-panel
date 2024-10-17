@@ -1,0 +1,73 @@
+kind: pipeline
+type: docker
+name: build
+
+clone:
+  disable: false
+
+steps:
+  - name: build-image
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: DOCKER_USERNAME
+      password:
+        from_secret: DOCKER_PASSWORD
+      repo: cOw0c/clover-panel
+      tags:
+        - latest
+
+trigger:
+  branch:
+    - main
+
+---
+
+kind: pipeline
+type: docker
+name: deploy
+
+depends_on:
+  - build
+clone:
+  disable: true
+
+steps:
+  - name: create directory
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: SSH_HOST
+      name:
+        from_secret: SSH_USER
+      key:
+        from_secret: SSH_KEY
+      port: 22
+      command_timeout: 4m
+      script:
+        - mkdir /panel
+  - name: upload yml
+    image: plugins/scp
+    settings:
+      host:
+        from_secret: SSH_HOST
+      username:
+        from_secret: SSH_USER
+      key:
+        from_secret: ssh_key  # 引用 SSH 密钥
+      source: ./docker-compose.yml
+      target: /panel/docker-compose.yml
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: SSH_HOST
+      name:
+        from_secret: SSH_USER
+      key:
+        from_secret: SSH_KEY
+      port: 22
+      command_timeout: 4m
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+        - docker compose -f /home/clover/panel/docker-compose.yml up -d --force-recreate
