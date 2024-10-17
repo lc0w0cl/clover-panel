@@ -26,7 +26,9 @@ steps:
       - npm run build
   - name: build-image
     image: plugins/docker
-    depends_on: [build-project]
+    depends_on:
+      - clone
+      - build-project
     volumes:
       - name: docker
         path: /var/run/docker.sock # 挂载宿主机的docker
