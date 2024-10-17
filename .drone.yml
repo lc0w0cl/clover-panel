@@ -5,14 +5,23 @@ name: build
 clone:
   disable: false
 
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+
 steps:
   - name: build-image
     image: plugins/docker
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock # 挂载宿主机的docker
     settings:
       username:
         from_secret: DOCKER_USERNAME
       password:
         from_secret: DOCKER_PASSWORD
+      dockerfile: ./Dockerfile
       repo: cOw0c/clover-panel
       tags:
         - latest
