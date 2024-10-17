@@ -73,6 +73,7 @@ steps:
         - mkdir -p /panel
   - name: upload yml
     image: appleboy/drone-scp
+    depends_on: [create directory]
     settings:
       host:
         from_secret: SSH_HOST
@@ -84,6 +85,7 @@ steps:
       target: /panel/docker-compose.yml
   - name: deploy
     image: appleboy/drone-ssh
+    depends_on: [upload yml]
     settings:
       host:
         from_secret: SSH_HOST
