@@ -12,7 +12,7 @@ volumes:
 
 steps:
   - name: build-project
-    image: 18.20.4
+    image: node:18.20.4
     depends_on:
       - clone
 
