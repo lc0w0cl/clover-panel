@@ -82,7 +82,7 @@ steps:
       key:
         from_secret: ssh_key  # 引用 SSH 密钥
       source: ./docker-compose.yml
-      target: /panel/docker-compose.yml
+      target: /panel
   - name: deploy
     image: appleboy/drone-ssh
     depends_on: [upload yml]
