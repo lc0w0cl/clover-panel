@@ -5,4 +5,5 @@ export interface Shortcut {
     internalNetwork: string;
     privateNetwork: string;
     orderNum: number;
+
 }
