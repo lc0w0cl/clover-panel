@@ -80,7 +80,7 @@ steps:
       username:
         from_secret: SSH_USER
       key:
-        from_secret: ssh_key  # 引用 SSH 密钥
+        from_secret: SSH_KEY  # 引用 SSH 密钥
       source: ./docker-compose.yml
       target: ~/panel
   - name: deploy
