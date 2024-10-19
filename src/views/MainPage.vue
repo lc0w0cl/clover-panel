@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import ShortcutCard from './ShortcutCard.vue';
-import { onBeforeUnmount, onMounted, reactive, ref, computed } from "vue"; // 合并导入
+import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue"; // 合并导入
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
-import { ShortcutGroup } from '../model/shortcutGroup';
+import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
-import { VueDraggable } from 'vue-draggable-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import {VueDraggable} from 'vue-draggable-plus'
+import type {FormInstance, FormRules} from 'element-plus'
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
+
+const fileInputRef = ref()
 
 // 切换网络模式的函数
 const toggleNetworkMode = () => {
@@ -25,7 +27,7 @@ const fetchShortcuts = async () => {
     const data = response.data;
     if (data.message === "success") {
       const groupsMap = new Map();
-       // @ts-ignore
+      // @ts-ignore
       data.data.forEach((item) => {
         if (!groupsMap.has(item.groupName)) {
           groupsMap.set(item.groupName, {
@@ -144,7 +146,7 @@ const resetForm = () => {
   }
 };
 
-const deleteShortcut = (groupIndex: number,index: number) => {
+const deleteShortcut = (groupIndex: number, index: number) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
 };
 
@@ -183,7 +185,7 @@ const editItem = () => {
   // 在这里添加编辑逻辑，比如打开编辑弹窗
   isEdit.value = true;
   dialogFormVisible.value = true;
-  Object.assign(form,selectedItem.value)
+  Object.assign(form, selectedItem.value)
   console.log('Edit:', selectedItem.value);
 };
 
@@ -207,12 +209,11 @@ const hideContextMenu = () => {
 };
 
 
-
-const dragCompleted = async(groupName: string) =>{
+const dragCompleted = async (groupName: string) => {
   // 给数据排序
   const group = shortcutsGroup.value.find(g => g.groupName === groupName);
   // 给组内的顺序编号
-  
+
   if (group) {
     // 重新给组内的元素按顺序编号
     group.shortcuts.forEach((shortcut: { orderNum: any; }, index: number) => {
@@ -233,6 +234,48 @@ const dragCompleted = async(groupName: string) =>{
     console.log('没有找到匹配的组');
   }
 }
+
+
+const triggerFileUpload = () => {
+  // 触发文件选择
+  if (fileInputRef) {
+    fileInputRef.value.click();
+  }
+};
+
+
+const handleFileChange = async (event: any) => {
+  const file = event.target.files[0];
+  if (file) {
+    // 创建 FormData 对象
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // 使用 axios 上传文件
+      const response = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      console.log('文件上传成功:', response.data);
+      // 更新 form.icon 为上传后的文件路径
+      form.icon = response.data.filepath;
+    } catch (error) {
+      console.error('文件上传失败:', error);
+    }
+  }
+
+};
+
+
+const fetchLogo = async () => {
+  const response = await axios.get('/api/fetch-logo', {
+    params: {url: form.internalNetwork}
+  });
+  console.log('抓取logo成功:', response.data);
+  form.icon = response.data.path;
+};
 
 // 在组件挂载时添加事件监听器，组件销毁时移除监听器
 onMounted(() => {
@@ -268,52 +311,61 @@ const type = 'dark'
     <div
         :style="{
          boxShadow: `var(${getCssVarName(type)})`,textAlign: `left`,borderRadius: `20px`,padding: `40px`
-        }" >
+        }">
 
 
-        <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-          <span>{{itemGroup.groupName}}</span>
-   
-          <div class="shortcuts-container">
-            <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;" @update="dragCompleted(itemGroup.groupName)">
-              <ShortcutCard
+      <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+        <span>{{ itemGroup.groupName }}</span>
+
+        <div class="shortcuts-container">
+          <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;"
+                        @update="dragCompleted(itemGroup.groupName)">
+            <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
                 :key="item.title"
                 :title="item.title"
                 :icon="item.icon"
                 :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
                 @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-                 />
-            </VueDraggable>
-            <!-- "+" 添加新导航按钮 -->
-            <div class="shortcut-card add-card" @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
-              <div class="plus-icon">+</div>
-            </div>
+            />
+          </VueDraggable>
+          <!-- "+" 添加新导航按钮 -->
+          <div class="shortcut-card add-card"
+               @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
+            <div class="plus-icon">+</div>
           </div>
         </div>
+      </div>
     </div>
 
 
-
-    
     <!--    新增/编辑导航栏-->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
       <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
         <el-form-item label="" prop="title">
           <span>名称</span>
-          <el-input v-model="form.title" autocomplete="off" />
+          <el-input v-model="form.title" autocomplete="off"/>
         </el-form-item>
         <el-form-item label="">
           <span>图标</span>
-          <el-input v-model="form.icon" autocomplete="off" />
+          <el-input v-model="form.icon" autocomplete="off">
+            <template #append>
+              <el-button @click="triggerFileUpload">上传图标</el-button>
+            </template>
+          </el-input>
+          <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none;"/>
         </el-form-item>
         <el-form-item label="" prop="internalNetwork">
           <span>公网地址</span>
-          <el-input v-model="form.internalNetwork" autocomplete="off" />
+          <el-input v-model="form.internalNetwork" autocomplete="off">
+            <template #append>
+              <el-button @click="fetchLogo">获取图标</el-button>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="">
           <span>内网地址</span>
-          <el-input v-model="form.privateNetwork" autocomplete="off"  style=""/>
+          <el-input v-model="form.privateNetwork" autocomplete="off" style=""/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -338,18 +390,17 @@ const type = 'dark'
 </template>
 
 <style scoped>
-
 .shortcuts-container {
   display: flex;
   flex-wrap: wrap;
-  /* //justify-content: center; */
 }
 
 .add-card {
   display: flex;
   justify-content: center;
-  align-items: center;
-  /* //background-color: #f0f0f0; */
+  align-items: center; /* 垂直居中 */
+  height: 100px; /* 确保有足够的高度 */
+  //width: 100px; /* 确保有足够的宽度 */
   color: #42b883;
   font-size: 2em;
   font-weight: bold;
@@ -367,5 +418,4 @@ const type = 'dark'
   right: 20px;
   z-index: 1000;
 }
-
 </style>

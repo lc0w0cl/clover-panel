@@ -3,6 +3,9 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import * as fs from "fs";
 import path from "node:path";
+import multer from 'multer';
+import * as cheerio from 'cheerio'
+import axios  from "axios";
 
 const app = express();
 const port = 3000;
@@ -11,12 +14,70 @@ const port = 3000;
 // 设置默认环境为 'development'
 const isDev = process.env.NODE_ENV !== 'production';
 const dbDir = isDev ? './' : '/app/db'; // 使用项目根目录
+const uploadDir = isDev ? '../src/assets/logo':'/app/logo'
 console.log('当前环境:',isDev?'dev':'prod')
 // 确保数据库目录存在
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
   console.log('目录创建成功');
 }
+
+
+// 设置 multer 存储配置
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); // 上传文件的目标目录
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, uniqueSuffix + extension); // 使用随机文件名
+  }
+});
+
+const upload = multer({ storage: storage });
+
+// 文件上传接口
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send({ error: 'No file uploaded' });
+  }
+  let filepath;
+  if (isDev){
+    filepath = '/src/assets/logo/'+req.file.filename
+  }else{
+    filepath = '/logo/'+req.file.filename
+  }
+  res.send({ message: '文件上传成功', filepath:filepath });
+});
+
+
+app.get('/api/fetch-logo', async (req, res) => {
+  const { url } = req.query;
+  try {
+    
+    let logoUrl = path.join('https://logo.clearbit.com/',url)
+
+    if (logoUrl) {
+      const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+      const logoPath = path.join(uploadDir, path.basename(logoUrl))+'.png';
+      
+      fs.writeFileSync(logoPath, logoResponse.data);
+      let filepath;
+      if (isDev){
+        filepath = '/src/assets/logo/'+path.basename(logoPath)
+      }else{
+        filepath = '/logo/'+path.basename(logoPath)
+      }
+      res.json({ message: '文件保存成功', path: filepath });
+    } else {
+      res.status(404).json({ error: '未发现logo' });
+    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: '抓取logo失败' });
+  }
+});
 
 // 打开数据库连接
 let db = new sqlite3.Database(path.join(dbDir, 'shortcuts.db'), (err) => {
@@ -150,7 +211,7 @@ app.put('/api/shortcuts/group/:groupName', (req, res) => {
   const { groupName } = req.params;
   const shortcuts = req.body.shortcuts;
 
-  // 为��个快捷方式构建更新语句
+  // 为每个快捷方式构建更新语句
   shortcuts.forEach((shortcut, index) => {
     const sql = `UPDATE shortcuts SET orderNum = ? WHERE id = ? AND groupName = ?`;
     const params = [shortcut.orderNum, shortcut.id, groupName];
