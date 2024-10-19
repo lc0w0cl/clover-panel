@@ -8,15 +8,18 @@ const app = express();
 const port = 3000;
 
 
+// 设置默认环境为 'development'
+const isDev = process.env.NODE_ENV !== 'production';
+const dbDir = isDev ? './' : '/app/db'; // 使用项目根目录
+console.log('当前环境:',isDev?'dev':'prod')
 // 确保数据库目录存在
-const dbDir = '/app/db';
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
   console.log('目录创建成功');
 }
 
 // 打开数据库连接
-let db = new sqlite3.Database(path.join(dbDir,'/shortcuts.db'), (err) => {
+let db = new sqlite3.Database(path.join(dbDir, 'shortcuts.db'), (err) => {
   if (err) {
     console.error(err.message);
   }
@@ -147,7 +150,7 @@ app.put('/api/shortcuts/group/:groupName', (req, res) => {
   const { groupName } = req.params;
   const shortcuts = req.body.shortcuts;
 
-  // 为每个快捷方式构建更新语句
+  // 为��个快捷方式构建更新语句
   shortcuts.forEach((shortcut, index) => {
     const sql = `UPDATE shortcuts SET orderNum = ? WHERE id = ? AND groupName = ?`;
     const params = [shortcut.orderNum, shortcut.id, groupName];
