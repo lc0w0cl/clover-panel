@@ -52,29 +52,21 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 
 app.get('/api/fetch-logo', async (req, res) => {
-    const {url} = req.query;
+    const { url } = req.query;
     try {
+        // 确保只传递域名部分
+        const domain = new URL(url).hostname;
+        const logoUrl = `https://logo.clearbit.com/${domain}`;
 
-        let logoUrl = path.join('https://logo.clearbit.com/', url)
+        const logoResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+        const logoPath = path.join(uploadDir, `${domain}.png`);
 
-        if (logoUrl) {
-            const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
-            const logoPath = path.join(uploadDir, path.basename(logoUrl)) + '.png';
-
-            fs.writeFileSync(logoPath, logoResponse.data);
-            let filepath;
-            if (isDev) {
-                filepath = '/src/assets/logo/' + path.basename(logoPath)
-            } else {
-                filepath = '/logo/' + path.basename(logoPath)
-            }
-            res.json({message: '文件保存成功', path: filepath});
-        } else {
-            res.status(404).json({error: '未发现logo'});
-        }
+        fs.writeFileSync(logoPath, logoResponse.data);
+        const filepath = isDev ? `/src/assets/logo/${domain}.png` : `/logo/${domain}.png`;
+        res.json({ message: '文件保存成功', path: filepath });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({error: '抓取logo失败'});
+        console.log(error);
+        res.status(500).json({ error: '抓取logo失败' });
     }
 });
 
