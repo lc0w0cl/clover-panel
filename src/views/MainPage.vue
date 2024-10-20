@@ -7,6 +7,7 @@ import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
+import path from "node:path";
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -67,7 +68,8 @@ const selectedGroupShortcutIndex = ref<number>(-1);
 
 const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
-
+// 上传了新的logo，如果上传了新的logo，没有保存则需要删除
+let upload_new_logo = ref(false);
 
 interface RuleForm {
   id: string; // 添加 id 属性
@@ -135,6 +137,12 @@ const saveShortcut = async () => {
 
 // 重置表单内容
 const resetForm = () => {
+
+  if(upload_new_logo.value){
+    //删除文件
+    deleteLogo()
+    upload_new_logo.value = false
+  }
   form.id = '';
   form.title = '';
   form.internalNetwork = '';
@@ -145,6 +153,8 @@ const resetForm = () => {
     ruleFormRef.value.clearValidate();
   }
 };
+
+
 
 const deleteShortcut = (groupIndex: number, index: number) => {
   shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
@@ -261,6 +271,7 @@ const handleFileChange = async (event: any) => {
       console.log('文件上传成功:', response.data);
       // 更新 form.icon 为上传后的文件路径
       form.icon = response.data.filepath;
+      upload_new_logo.value = true;
     } catch (error) {
       console.error('文件上传失败:', error);
     }
@@ -270,11 +281,30 @@ const handleFileChange = async (event: any) => {
 
 
 const fetchLogo = async () => {
+  if (form.internalNetwork == undefined || form.internalNetwork == '') {
+    return;
+  }
   const response = await axios.get('/api/fetch-logo', {
     params: {url: form.internalNetwork}
   });
   console.log('抓取logo成功:', response.data);
   form.icon = response.data.path;
+  upload_new_logo.value = true;
+};
+
+const deleteLogo = async () => {
+  if (upload_new_logo.value) {
+    try {
+      const response = await axios.delete('/api/delete-logo', {
+        params: { filename: form.icon } // 替换为实际的文件路径
+      });
+      console.log('文件删除成功:', response.data);
+      // ElMessage.success('文件删除成功');
+    } catch (error) {
+      console.error('删除文件失败:', error);
+      // ElMessage.error('删除文件失败');
+    }
+  }
 };
 
 // 在组件挂载时添加事件监听器，组件销毁时移除监听器
