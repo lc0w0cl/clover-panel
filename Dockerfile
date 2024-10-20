@@ -11,13 +11,15 @@ ENV NODE_ENV=production
 # 复制构建的文件和服务器代码到工作目录
 COPY  dist /usr/share/nginx/html
 COPY  server ./server
-COPY  package*.json ./
+
+WORKDIR /app/server
+# 安装仅生产环境所需的依赖
+RUN npm install
+
+WORKDIR /app
+
 # 复制 assets/logo 目录到 Nginx 的静态文件目录
 COPY src/assets/logo /app/logo
-
-# 安装仅生产环境所需的依赖
-RUN npm install --only=production
-
 # 复制 Nginx 配置文件
 COPY nginx.conf /etc/nginx/nginx.conf
 

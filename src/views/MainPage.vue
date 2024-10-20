@@ -7,7 +7,6 @@ import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
-import path from "node:path";
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
