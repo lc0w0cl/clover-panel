@@ -3,10 +3,12 @@ import ShortcutCard from './ShortcutCard.vue';
 import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue"; // 合并导入
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
+import SettingPage from "./SettingPage.vue";
 import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
+import {Setting} from '@element-plus/icons-vue'
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -69,6 +71,8 @@ const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
 // 上传了新的logo，如果上传了新的logo，没有保存则需要删除
 let upload_new_logo = ref(false);
+
+const settingPageVisible = ref(false)
 
 interface RuleForm {
   id: string; // 添加 id 属性
@@ -332,6 +336,7 @@ const type = 'dark'
     >
       {{ isInternalNetwork ? '内网模式' : '外网模式' }}
     </el-button>
+    <el-button   class="setting-toggle" type="primary" :icon="Setting" circle @click="settingPageVisible=true"/>
 
     <!-- 使用 SearchBar 组件 -->
     <SearchBar/>
@@ -416,6 +421,15 @@ const type = 'dark'
     />
 
   </div>
+
+
+
+  <el-dialog v-model="settingPageVisible" title="系统设置" width="800">
+    <SettingPage/>
+  </el-dialog>
+
+
+  
 </template>
 
 <style scoped>
@@ -442,6 +456,13 @@ const type = 'dark'
 }
 
 .network-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 60px;
+  z-index: 1000;
+}
+
+.setting-toggle {
   position: fixed;
   top: 20px;
   right: 20px;

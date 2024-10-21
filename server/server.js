@@ -176,6 +176,45 @@ db.serialize(() => {
             });
         }
     });
+
+    // 创建 groups 表
+    db.run(`CREATE TABLE IF NOT EXISTS groups
+            (
+                id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                sort INTEGER
+            )`, (err) => {
+        if (err) {
+            console.error("Error creating groups table:", err.message);
+        } else {
+            console.log("Groups table created successfully.");
+            
+            // 检查 groups ��中是否有数据
+            db.get(`SELECT COUNT(*) AS count
+                    FROM groups`, (err, row) => {
+                if (err) {
+                    console.error("Error checking groups table:", err.message);
+                } else if (row.count === 0) {
+                    // 如果没有数据,插入默认数据
+                    const insert = `INSERT INTO groups (name, sort) VALUES (?, ?)`;
+                    db.run(insert, ['个人应用', 0], (err) => {
+                        if (err) {
+                            console.error("Error inserting default group '个人应用':", err.message);
+                        } else {
+                            console.log("Default group '个人应用' inserted successfully.");
+                        }
+                    });
+                    db.run(insert, ['服务器', 1], (err) => {
+                        if (err) {
+                            console.error("Error inserting default group '服务器':", err.message);
+                        } else {
+                            console.log("Default group '服务器' inserted successfully.");
+                        }
+                    });
+                }
+            });
+        }
+    });
 });
 
 // 解析 JSON 请求体
@@ -337,3 +376,68 @@ app.post('/api/login', (req, res) => {
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}/`);
 });
+
+// 获取所有分组
+app.get('/api/groups', (req, res) => {
+    const sql = `SELECT * FROM groups ORDER BY sort`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": rows
+        });
+    });
+});
+
+// 添加新分组
+app.post('/api/groups', (req, res) => {
+    const {name, sort} = req.body;
+    const sql = `INSERT INTO groups (name, sort) VALUES (?, ?)`;
+    db.run(sql, [name, sort], function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": {id: this.lastID}
+        });
+    });
+});
+
+// 更新分组
+app.put('/api/groups/:id', (req, res) => {
+    const {name, sort} = req.body;
+    const {id} = req.params;
+    const sql = `UPDATE groups SET name = ?, sort = ? WHERE id = ?`;
+    db.run(sql, [name, sort, id], function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "changes": this.changes
+        });
+    });
+});
+
+// 删除分组
+app.delete('/api/groups/:id', (req, res) => {
+    const {id} = req.params;
+    const sql = `DELETE FROM groups WHERE id = ?`;
+    db.run(sql, id, function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "changes": this.changes
+        });
+    });
+});
+
