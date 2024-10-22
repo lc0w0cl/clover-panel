@@ -9,6 +9,7 @@ import axios from 'axios'; // 引入axios
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import {Setting} from '@element-plus/icons-vue'
+import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
@@ -20,42 +21,59 @@ const toggleNetworkMode = () => {
   isInternalNetwork.value = !isInternalNetwork.value;
 };
 
-const shortcutsGroup = ref<ShortcutGroup[]>([]); // 初始化为空数组
+const shortcutsGroup = ref<ShortcutGroup[]>([]);
+const groups = ref<GroupItem[]>([]);
 
-// 使用axios获取数据并优化数据处理
+// 获取分组数据
+const fetchGroups = async () => {
+  try {
+    const response = await axios.get<{ data: GroupItem[] }>('/api/groups');
+    groups.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+  }
+};
+
+// 获取快捷方式数据
 const fetchShortcuts = async () => {
   try {
     const response = await axios.get('/api/shortcuts');
     const data = response.data;
     if (data.message === "success") {
       const groupsMap = new Map();
-      // @ts-ignore
-      data.data.forEach((item) => {
-        if (!groupsMap.has(item.groupName)) {
-          groupsMap.set(item.groupName, {
-            groupName: item.groupName,
-            order: item.orderNum,
-            shortcuts: []
+      
+      // 首先,为每个已知的分组创建一个空的快捷方式数组
+      groups.value.forEach(group => {
+        groupsMap.set(group.id, {
+          groupName: group.name,
+          order: group.sort,
+          shortcuts: []
+        });
+      });
+
+      // 然后,将快捷方式添加到相应的分组中
+      data.data.forEach((item: any) => {
+        if (groupsMap.has(item.groupId)) {
+          groupsMap.get(item.groupId).shortcuts.push({
+            id: item.id,
+            title: item.title,
+            icon: item.icon,
+            internalNetwork: item.internalNetwork,
+            privateNetwork: item.privateNetwork,
+            orderNum: item.orderNum
           });
         }
-        groupsMap.get(item.groupName).shortcuts.push({
-          id: item.id,
-          title: item.title,
-          icon: item.icon,
-          internalNetwork: item.internalNetwork,
-          privateNetwork: item.privateNetwork,
-          orderNum: item.orderNum  // 确保orderNum也被包括在内
-        });
       });
 
       // 对每个组的shortcuts按orderNum排序
       groupsMap.forEach((group) => {
-        // @ts-ignore
-        group.shortcuts.sort((a, b) => a.orderNum - b.orderNum);
+        group.shortcuts.sort((a: any, b: any) => a.orderNum - b.orderNum);
       });
 
-      // 将Map转换为数组
-      shortcutsGroup.value = Array.from(groupsMap.values());
+      // 将Map转换为数组,并按照groups的顺序排序
+      shortcutsGroup.value = groups.value
+        .map(group => groupsMap.get(group.id))
+        .filter(group => group !== undefined);
     }
   } catch (error) {
     console.error('Error fetching shortcuts:', error);
@@ -109,7 +127,7 @@ const selectedItem = ref(null);
 
 const saveShortcut = async () => {
   const shortcutData = {
-    groupName: shortcutsGroup.value[selectedGroupShortcutIndex.value].groupName,
+    groupId: groups.value[selectedGroupShortcutIndex.value].id,
     orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
     title: form.title,
     icon: form.icon,
@@ -120,28 +138,27 @@ const saveShortcut = async () => {
   try {
     if (isEdit.value && selectedShortcutIndex.value !== null) {
       const id = shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value].id;
-      // 使用axios进行PUT请求
       const response = await axios.put(`/api/shortcuts/${id}`, shortcutData);
       console.log('Update response:', response.data);
-      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts[selectedShortcutIndex.value] = {...form};
     } else {
-      // 使用axios进行POST请求
       const response = await axios.post('/api/shortcuts', shortcutData);
       console.log('Create response:', response.data);
-      shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.push({...form, id: response.data.data.id});
     }
+    
+    // 保存成功后,重新获取shortcuts数据
+    await fetchShortcuts();
   } catch (error) {
     console.error('Error saving shortcut:', error);
   }
 
   dialogFormVisible.value = false;
-  resetForm();
+  resetForm(true);
 };
 
 // 重置表单内容
-const resetForm = () => {
+const resetForm = (save_success:boolean) => {
 
-  if(upload_new_logo.value){
+  if(upload_new_logo.value && !save_success){
     //删除文件
     deleteLogo()
     upload_new_logo.value = false
@@ -155,12 +172,6 @@ const resetForm = () => {
   if (ruleFormRef.value) {
     ruleFormRef.value.clearValidate();
   }
-};
-
-
-
-const deleteShortcut = (groupIndex: number, index: number) => {
-  shortcutsGroup.value[groupIndex].shortcuts.splice(index, 1);
 };
 
 const submitForm = async (formEl: FormInstance | undefined) => {
@@ -210,8 +221,8 @@ const removeItem = async () => {
   try {
     const response = await axios.delete(`/api/shortcuts/${shortcutId}`);
     console.log('Remove response:', response.data);
-    // 从本地状态中删除快捷方式
-    deleteShortcut(groupIndex, index);
+    // 删除成功后,重新获取shortcuts数据
+    await fetchShortcuts();
   } catch (error) {
     console.error('Error removing shortcut:', error);
   }
@@ -222,21 +233,17 @@ const hideContextMenu = () => {
 };
 
 
-const dragCompleted = async (groupName: string) => {
-  // 给数据排序
-  const group = shortcutsGroup.value.find(g => g.groupName === groupName);
-  // 给组内的顺序编号
+const dragCompleted = async (groupId: number) => {
+  const group = shortcutsGroup.value.find(g => g.groupName === groups.value.find(group => group.id === groupId)?.name);
 
   if (group) {
-    // 重新给组内的元素按顺序编号
     group.shortcuts.forEach((shortcut: { orderNum: any; }, index: number) => {
-      shortcut.orderNum = index + 1;  // 从1开始编号
+      shortcut.orderNum = index + 1;
     });
     console.log('重新编号后的组:', group.shortcuts);
 
-    // 更新数据库中的数据
     try {
-      const response = await axios.put(`/api/shortcuts/group/${groupName}`, {
+      const response = await axios.put(`/api/shortcuts/group/${groupId}`, {
         shortcuts: group.shortcuts
       });
       console.log('数据库更新成功:', response.data);
@@ -310,9 +317,10 @@ const deleteLogo = async () => {
   }
 };
 
-// 在组件挂载时添加事件监听器，组件销毁时移除监听器
-onMounted(() => {
-  fetchShortcuts();
+// 在组件挂载时,先获取分组,然后获取快捷方式
+onMounted(async () => {
+  await fetchGroups();
+  await fetchShortcuts();
   window.addEventListener('click', handleOutsideClick as EventListener);
 });
 
@@ -320,10 +328,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick as EventListener);
 });
 
-const getCssVarName = (type: string) => {
-  return `--el-box-shadow${type ? '-' : ''}${type}`
-}
-const type = 'dark'
 </script>
 
 <template>
@@ -342,18 +346,13 @@ const type = 'dark'
     <SearchBar/>
 
     <!-- 现有的导航展示 -->
-    <div
-        :style="{
-         boxShadow: `var(${getCssVarName(type)})`,textAlign: `left`,borderRadius: `20px`,padding: `40px`
-        }">
-
-
-      <div v-for="(itemGroup,groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-        <span>{{ itemGroup.groupName }}</span>
+    <div class="navigation-display">
+      <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+        <span class="group-title">{{ itemGroup.groupName }}</span>
 
         <div class="shortcuts-container">
           <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;"
-                        @update="dragCompleted(itemGroup.groupName)">
+                        @update="dragCompleted(groups[groupIndex].id)">
             <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
                 :key="item.title"
@@ -468,4 +467,33 @@ const type = 'dark'
   right: 20px;
   z-index: 1000;
 }
+
+.navigation-display {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.group-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.shortcuts-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 30px;
+}
 </style>
+
+
+
+
+

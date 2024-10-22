@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "express": "^4.17.1",
     "axios": "^0.21.1",
-    "sqlite3": "^5.1.7",
     "bcrypt": "^5.1.1",
-    "multer": "^1.4.5-lts.1"
+    "express": "^4.17.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.7"
   }
 }

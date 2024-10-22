@@ -1,62 +1,54 @@
 <template>
   <div class="login-container">
-    <h1>CLOVER</h1>
+    <div class="login-box">
+      <div class="logo-container">
+        <img src="/src/assets/login.svg" alt="CLOVER Logo" class="logo">
+      </div>
       <el-input
-      v-model="username"
-      style="width: 240px"
-      placeholder="用户名"
-    />
-    <div style="margin: 20px 0" />
+        v-model="username"
+        placeholder="用户名"
+      />
+      <div style="margin: 20px 0" />
       <el-input
-      v-model="password"
-      style="width: 240px"
-      type="password"
-      placeholder="密码"
-      show-password
-      @keyup.enter="login"
-    />
-    <div style="margin: 20px 0" />
-    <el-button type="primary" @click="login" :disabled="isLoading">登录</el-button>
-    <p v-if="errorMessage">{{ errorMessage }}</p>
+        v-model="password"
+        type="password"
+        placeholder="密码"
+        show-password
+        @keyup.enter="handleLogin"
+      />
+      <div style="margin: 20px 0" />
+      <el-button type="primary" @click="handleLogin" :loading="isLoading">登录</el-button>
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    </div>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
-import { login } from '../auth/index';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { login } from '../utils/auth';
 
-export default {
-  data() {
-    return {
-      username: '',
-      password: '',
-      errorMessage: '',
-      isLoading: false
-    };
-  },
-  methods: {
-    async login() {
-      this.isLoading = true;
-      this.errorMessage = '';
-      try {
-        const response = await axios.post('/api/login', {
-          username: this.username,
-          password: this.password
-        });
-        console.log('Login response:', response.data);
-        if (response.data.message === 'Login successful') {
-          login();
-          this.$router.push('/home');
-        } else {
-          this.errorMessage = '登录失败，请检查用户名和密码。';
-        }
-      } catch (error) {
-        console.error('Login error:', error);
-        this.errorMessage = '登录过程中发生错误。';
-      } finally {
-        this.isLoading = false;
-      }
+const username = ref('');
+const password = ref('');
+const errorMessage = ref('');
+const isLoading = ref(false);
+const router = useRouter();
+
+const handleLogin = async () => {
+  isLoading.value = true;
+  errorMessage.value = '';
+  try {
+    const success = await login(username.value, password.value);
+    if (success) {
+      router.push('/home');
+    } else {
+      errorMessage.value = '登录失败，请检查用户名和密码。';
     }
+  } catch (error) {
+    console.error('Login error:', error);
+    errorMessage.value = '登录过程中发生错误。';
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
@@ -64,9 +56,65 @@ export default {
 <style scoped>
 .login-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   height: 100vh;
+  background-image: url('/path/to/your/background-image.jpg'); /* 替换为您的背景图片路径 */
+  background-size: cover;
+  background-position: center;
+}
+
+.login-box {
+  width: 350px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 100px; /* 调整大小以适应您的Logo */
+  height: auto;
+}
+
+.el-input {
+  margin-bottom: 20px;
+}
+
+.el-input :deep(.el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+.el-input :deep(.el-input__inner) {
+  color: #ffffff;
+}
+
+.el-input :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.el-button {
+  width: 100%;
+  background-color: rgba(76, 175, 80, 0.8);
+  border: none;
+}
+
+.el-button:hover {
+  background-color: rgba(76, 175, 80, 1);
+}
+
+.error-message {
+  color: #ff6b6b;
+  text-align: center;
+  margin-top: 20px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 </style>
