@@ -146,19 +146,22 @@ function insertDefaultShortcuts() {
                 console.error("检查快捷方式表时出错:", err.message);
                 reject(err);
             } else if (row.count === 0) {
+                const isDev = process.env.NODE_ENV !== 'production';
+                const getIconPath = (filename) => isDev ? `/src/assets/logo/${filename}` : `/logo/${filename}`;
+
                 const aiModels = [
-                    { title: 'ChatGPT', url: 'https://chat.openai.com/', icon: '/src/assets/logo/chatgpt.svg' },
-                    { title: 'Gemini', url: 'https://gemini.google.com/', icon: '/src/assets/logo/gemini.svg' },
-                    { title: '文心一言', url: 'https://yiyan.baidu.com/', icon: '/src/assets/logo/文心一言.ico' },
-                    { title: '通义千问', url: 'https://qianwen.aliyun.com/', icon: '/src/assets/logo/通义千问.svg' },
-                    { title: '讯飞星火', url: 'https://xinghuo.xfyun.cn/', icon: '/src/assets/logo/讯飞星火.ico' }
+                    { title: 'ChatGPT', url: 'https://chat.openai.com/', icon: getIconPath('chatgpt.svg') },
+                    { title: 'Gemini', url: 'https://gemini.google.com/', icon: getIconPath('gemini.svg') },
+                    { title: '文心一言', url: 'https://yiyan.baidu.com/', icon: getIconPath('文心一言.ico') },
+                    { title: '通义千问', url: 'https://qianwen.aliyun.com/', icon: getIconPath('通义千问.svg') },
+                    { title: '讯飞星火', url: 'https://xinghuo.xfyun.cn/', icon: getIconPath('讯飞星火.ico') }
                 ];
                 const servers = [
-                    { title: '百度', url: 'https://www.baidu.com/', icon: '/src/assets/logo/百度.svg' },
-                    { title: '谷歌', url: 'https://www.google.com/', icon: '/src/assets/logo/谷歌.svg' },
-                    { title: '必应', url: 'https://www.bing.com/', icon: '/src/assets/logo/必应.svg' },
-                    { title: '阿里云', url: 'https://www.aliyun.com/', icon: '/src/assets/logo/阿里云.ico' },
-                    { title: '腾讯云', url: 'https://cloud.tencent.com/', icon: '/src/assets/logo/腾讯云.ico' }
+                    { title: '百度', url: 'https://www.baidu.com/', icon: getIconPath('百度.svg') },
+                    { title: '谷歌', url: 'https://www.google.com/', icon: getIconPath('谷歌.svg') },
+                    { title: '必应', url: 'https://www.bing.com/', icon: getIconPath('必应.svg') },
+                    { title: '阿里云', url: 'https://www.aliyun.com/', icon: getIconPath('阿里云.ico') },
+                    { title: '腾讯云', url: 'https://cloud.tencent.com/', icon: getIconPath('腾讯云.ico') }
                 ];
 
                 const insert = `INSERT INTO shortcuts (groupId, orderNum, title, icon, internalNetwork, privateNetwork) VALUES (?, ?, ?, ?, ?, ?)`;
