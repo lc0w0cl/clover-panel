@@ -33,23 +33,28 @@ axios.interceptors.response.use(
   }
 );
 
-export const login = async (username: string, password: string) => {
+export async function login(username: string, password: string): Promise<{ success: boolean; message: string }> {
   try {
     const response = await axios.post('/api/login', { username, password });
-    const { token } = response.data;
-    localStorage.setItem('token', token);
-    return true;
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      return { success: true, message: '登录成功' };
+    } else {
+      return { success: false, message: response.data.message || '登录失败' };
+    }
   } catch (error) {
-    console.error('Login failed:', error);
-    return false;
+    console.error('Login error:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      return { success: false, message: error.response.data.message || '登录失败' };
+    }
+    return { success: false, message: '网络错误，请稍后重试' };
   }
-};
+}
 
-export const logout = () => {
+export function logout() {
   localStorage.removeItem('token');
-  router.push('/login');
-};
+}
 
-export const isAuthenticated = () => {
+export function isAuthenticated(): boolean {
   return !!localStorage.getItem('token');
-};
+}

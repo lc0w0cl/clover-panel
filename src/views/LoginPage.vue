@@ -38,11 +38,12 @@ const handleLogin = async () => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    const success = await login(username.value, password.value);
-    if (success) {
+    const result = await login(username.value, password.value);
+    if (result.success) {
+      console.log('登录成功，正在跳转...');
       router.push('/home');
     } else {
-      errorMessage.value = '登录失败，请检查用户名和密码。';
+      errorMessage.value = result.message;
     }
   } catch (error) {
     console.error('Login error:', error);

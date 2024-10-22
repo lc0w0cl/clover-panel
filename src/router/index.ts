@@ -1,8 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '../views/LoginPage.vue';
 import MainPage from '../views/MainPage.vue';
+import { isAuthenticated } from '../utils/auth';
 
 const routes = [
+  {
+    path: '/',
+    name: 'Root',
+    redirect: () => {
+      return isAuthenticated() ? { name: 'Home' } : { name: 'Login' };
+    }
+  },
   {
     path: '/login',
     name: 'Login',
@@ -20,6 +28,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+});
+
+router.beforeEach((to, _from, next) => {
+  if (to.meta.requiresAuth) {
+    if (!isAuthenticated()) {
+      next({ name: 'Login' });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;
