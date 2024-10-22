@@ -59,10 +59,14 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-image: url('/path/to/your/background-image.jpg'); /* 替换为您的背景图片路径 */
+  min-height: 100vh;
+  min-width: 100vw;
+  background-image: url('/src/assets/background-login.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .login-box {

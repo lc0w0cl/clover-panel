@@ -317,11 +317,18 @@ const deleteLogo = async () => {
   }
 };
 
+const searchBarRef = ref(null);
+
 // 在组件挂载时,先获取分组,然后获取快捷方式
 onMounted(async () => {
   await fetchGroups();
   await fetchShortcuts();
   window.addEventListener('click', handleOutsideClick as EventListener);
+  
+  // 在下一个 tick 中聚焦搜索框
+  setTimeout(() => {
+    searchBarRef.value?.focus();
+  }, 0);
 });
 
 onBeforeUnmount(() => {
@@ -331,19 +338,28 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div>
-    <!-- 添加网络模式切换按钮 -->
+  <div class="main-container">
+    <!-- 网络模式切换按钮 -->
     <el-button
-        class="network-mode-toggle"
-        @click="toggleNetworkMode"
-        :type="isInternalNetwork ? 'success' : 'primary'"
+      class="network-mode-toggle custom-button"
+      @click="toggleNetworkMode"
+      :class="{ 'internal-network': isInternalNetwork }"
     >
       {{ isInternalNetwork ? '内网模式' : '外网模式' }}
     </el-button>
-    <el-button   class="setting-toggle" type="primary" :icon="Setting" circle @click="settingPageVisible=true"/>
+    
+    <!-- 设置按钮 -->
+    <el-button
+      class="setting-toggle custom-button"
+      @click="settingPageVisible=true"
+    >
+      <el-icon><Setting /></el-icon>
+    </el-button>
 
-    <!-- 使用 SearchBar 组件 -->
-    <SearchBar/>
+    <!-- 添加一个包装器来调整 SearchBar 的位置 -->
+    <div class="search-bar-wrapper">
+      <SearchBar ref="searchBarRef"/>
+    </div>
 
     <!-- 现有的导航展示 -->
     <div class="navigation-display">
@@ -432,9 +448,56 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.main-container {
+  min-height: 100vh;
+  min-width: 100vw;
+  background-image: url('/src/assets/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.search-bar-wrapper {
+  margin-top: 60px; /* 调整这个值来改变搜索框距离顶部的距离 */
+  width: 100%;
+  max-width: 600px; /* 可以根据需要调整最大宽度 */
+}
+
+.navigation-display {
+  margin-top: 30px; /* 给导航显示区域添加一些上边距 */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  width: 100%;
+  max-width: 1200px; /* 或者您认为合适的最大宽度 */
+  margin: 0 auto;
+}
+
 .shortcuts-container {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.group-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 15px;
+  display: block;
+  text-align: center;
 }
 
 .add-card {
@@ -454,44 +517,51 @@ onBeforeUnmount(() => {
   user-select: none;
 }
 
-.network-mode-toggle {
+.custom-button {
   position: fixed;
   top: 20px;
-  right: 60px;
-  z-index: 1000;
-}
-
-.setting-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-}
-
-.navigation-display {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.group-title {
-  font-size: 1.2em;
+  color: white;
   font-weight: bold;
-  margin-bottom: 15px;
-  display: block;
+  transition: all 0.3s ease;
+  z-index: 1000;
 }
 
-.shortcuts-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 30px;
+.custom-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.network-mode-toggle {
+  right: 80px;
+}
+
+.network-mode-toggle.internal-network {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.network-mode-toggle.internal-network:hover {
+  background: rgba(76, 175, 80, 0.3);
+}
+
+.setting-toggle {
+  right: 20px;
+  padding: 10px;
+}
+
+.setting-toggle .el-icon {
+  font-size: 1.2em;
 }
 </style>
+
+
+
+
+
+
 
 
 

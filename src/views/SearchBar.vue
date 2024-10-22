@@ -13,6 +13,7 @@
           @keyup.enter="submitSearch"
           @focus="isFocused = true"
           @blur="isFocused = false"
+          ref="searchInput"
       />
       <div class="google-logo">
         <img src="/src/assets/logo/谷歌.svg" alt="Google Logo" />
@@ -22,10 +23,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const query = ref('');
 const isFocused = ref(false);
+const searchInput = ref(null);
 
 const submitSearch = () => {
   if (query.value.trim() !== '') {
@@ -33,6 +35,17 @@ const submitSearch = () => {
     window.open(googleSearchUrl, '_blank');
   }
 };
+
+onMounted(() => {
+  searchInput.value.focus();
+});
+
+// 暴露一个方法以便外部组件可以触发聚焦
+const focus = () => {
+  searchInput.value.focus();
+};
+
+defineExpose({ focus });
 </script>
 
 <style scoped>
@@ -48,24 +61,26 @@ const submitSearch = () => {
   width: 584px;
   max-width: 90%;
   height: 44px;
-  border: 1px solid #dfe1e5;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 24px;
   padding: 5px 8px;
-  background-color: #fff;
-  box-shadow: none;
-  transition: box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  transition: box-shadow 0.3s, border-color 0.3s;
 }
 
 .search-bar:hover, .search-bar:focus-within {
   box-shadow: 0 1px 6px rgba(32,33,36,.28);
-  border-color: rgba(223,225,229,0);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .search-icon {
   padding: 0 13px;
   height: 20px;
   width: 20px;
-  color: #9aa0a6;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .search-bar input {
@@ -75,10 +90,14 @@ const submitSearch = () => {
   border: none;
   margin: 0;
   padding: 0;
-  color: rgba(0,0,0,.87);
+  color: rgba(255, 255, 255, 0.87);
   word-wrap: break-word;
   outline: none;
   font-size: 16px;
+}
+
+.search-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .google-logo {
