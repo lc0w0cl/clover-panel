@@ -317,7 +317,7 @@ const deleteLogo = async () => {
   }
 };
 
-const searchBarRef = ref(null);
+const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
 // 在组件挂载时,先获取分组,然后获取快捷方式
 onMounted(async () => {
@@ -556,6 +556,7 @@ onBeforeUnmount(() => {
   font-size: 1.2em;
 }
 </style>
+
 
 
 
