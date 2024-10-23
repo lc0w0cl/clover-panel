@@ -1,6 +1,6 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
+    <div class="login-box" :class="{ 'fade-in': !isLoading }">
       <div class="logo-container">
         <img src="/src/assets/login.svg" alt="CLOVER Logo" class="logo">
       </div>
@@ -24,15 +24,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '../utils/auth';
 
 const username = ref('');
 const password = ref('');
 const errorMessage = ref('');
-const isLoading = ref(false);
+const isLoading = ref(true);
 const router = useRouter();
+
+onMounted(() => {
+  // 模拟加载过程
+  setTimeout(() => {
+    isLoading.value = false;
+  }, 500);
+});
 
 const handleLogin = async () => {
   isLoading.value = true;
@@ -77,6 +84,14 @@ const handleLogin = async () => {
   border-radius: 15px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .logo-container {
@@ -85,7 +100,7 @@ const handleLogin = async () => {
 }
 
 .logo {
-  width: 100px; /* 调整大小以适应您的Logo */
+  width: 100px;
   height: auto;
 }
 
