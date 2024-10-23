@@ -1,20 +1,33 @@
 <template>
   <div class="shortcut-card" @click="openLink">
     <div class="icon-wrapper">
-      <img :src="icon" :alt="title" class="icon">
+      <div v-if="!imageLoaded" class="icon-placeholder"></div>
+      <img 
+        :src="icon" 
+        :alt="title" 
+        class="icon" 
+        :class="{ 'icon-loaded': imageLoaded }"
+        @load="onImageLoad"
+      >
     </div>
     <div class="title">{{ title }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
+import { defineProps, ref } from 'vue';
 
 const props = defineProps({
   title: String,
   icon: String,
   link: String
 });
+
+const imageLoaded = ref(false);
+
+const onImageLoad = () => {
+  imageLoaded.value = true;
+};
 
 const openLink = () => {
   if (props.link) {
@@ -36,21 +49,34 @@ const openLink = () => {
 }
 
 .icon-wrapper {
+  position: relative;
   width: 64px;
   height: 64px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+}
+
+.icon-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f0f0f0;
   border-radius: 15px;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .icon {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.icon-loaded {
+  opacity: 1;
 }
 
 .title {

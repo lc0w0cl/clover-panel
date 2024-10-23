@@ -308,7 +308,7 @@ const deleteLogo = async () => {
       const response = await axios.delete('/api/delete-logo', {
         params: { filename: form.icon } // 替换为实际的文件路径
       });
-      console.log('件删���成功:', response.data);
+      console.log('件删功:', response.data);
       // ElMessage.success('文件删除成功');
     } catch (error) {
       console.error('删除文件失败:', error);
@@ -338,7 +338,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="main-container">
+  <div v-if="isLoading" class="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
+  <div v-else class="main-container">
     <!-- 网络模式切换按钮 -->
     <el-button
       class="network-mode-toggle custom-button"
@@ -477,6 +480,7 @@ onBeforeUnmount(() => {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
+  animation: fadeIn 1s ease-in-out;
   padding: 20px;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -708,7 +712,41 @@ onBeforeUnmount(() => {
   color: #909399;
   font-size: 14px;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
+
+
 
 
 
