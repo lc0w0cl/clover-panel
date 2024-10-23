@@ -74,7 +74,7 @@ app.get('/api/fetch-logo', async (req, res) => {
 
         fs.writeFileSync(logoPath, logoResponse.data);
         const filepath = isDev ? `/src/assets/logo/${domain}.png` : `/logo/${domain}.png`;
-        res.json({message: '文件保存成功', path: filepath});
+        res.json({message: '文件保存��功', path: filepath});
     } catch (error) {
         console.log(error);
         res.status(500).json({error: '抓取logo失败'});
@@ -530,3 +530,35 @@ app.delete('/api/groups/:id', authenticateToken, (req, res) => {
     });
 });
 
+app.post('/api/change-password', authenticateToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.userId; // 假设 authenticateToken 中间件设置了 req.user
+
+  // 从数据库获取用户
+  db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: '服务器错误' });
+    }
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    // 验证当前密码
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: '当前密码不正确' });
+    }
+
+    // 哈希新密码
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 更新数据库中的密码
+    db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId], (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: '更新密码失败' });
+      }
+      res.json({ success: true, message: '密码已成功更新' });
+    });
+  });
+});

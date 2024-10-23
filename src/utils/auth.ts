@@ -53,6 +53,8 @@ export async function login(username: string, password: string): Promise<{ succe
 
 export function logout() {
   localStorage.removeItem('token');
+  // 可能还需要清除其他用户相关的数据
+  router.push('/login'); // 登出后跳转到登录页面
 }
 
 export function isAuthenticated(): boolean {

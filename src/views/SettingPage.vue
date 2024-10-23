@@ -1,10 +1,12 @@
 <template>
     <div>
-        <el-tabs :tab-position="tabPosition"  class="demo-tabs">
+        <el-tabs :tab-position="tabPosition" class="demo-tabs">
             <el-tab-pane label="分组管理">
                 <GroupSet/>
             </el-tab-pane>
-            <el-tab-pane label="我的信息"></el-tab-pane>
+            <el-tab-pane label="我的信息">
+                <UserInfo/>
+            </el-tab-pane>
             <el-tab-pane label="系统设置"></el-tab-pane>
         </el-tabs>
     </div>
@@ -14,6 +16,7 @@
     import { ref } from 'vue'
     import type { TabsInstance } from 'element-plus'
     import GroupSet from './settings/GroupSet.vue'
+    import UserInfo from './settings/UserInfo.vue'
 
     const tabPosition = ref<TabsInstance['tabPosition']>('left')
 </script>
@@ -32,4 +35,3 @@
   height: 100%;
 }
 </style>
-
