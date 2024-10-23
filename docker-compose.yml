@@ -8,7 +8,11 @@ services:
       - nginx
     volumes:
       - ./db:/app/db
+      - logo_data:/app/logo
 
 networks:
   nginx:
     external: true
+
+volumes:
+  logo_data:
