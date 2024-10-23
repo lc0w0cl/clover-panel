@@ -257,7 +257,7 @@ const dragCompleted = async (groupId: number) => {
 
 
 const triggerFileUpload = () => {
-  // 触发文件选择
+  // 触文选择
   if (fileInputRef) {
     fileInputRef.value.click();
   }
@@ -308,7 +308,7 @@ const deleteLogo = async () => {
       const response = await axios.delete('/api/delete-logo', {
         params: { filename: form.icon } // 替换为实际的文件路径
       });
-      console.log('件删除成功:', response.data);
+      console.log('件删���成功:', response.data);
       // ElMessage.success('文件删除成功');
     } catch (error) {
       console.error('删除文件失败:', error);
@@ -364,7 +364,20 @@ onBeforeUnmount(() => {
     <!-- 现有的导航展示 -->
     <div class="navigation-display">
       <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-        <span class="group-title">{{ itemGroup.groupName }}</span>
+        <div class="group-header">
+          <div class="group-title-container">
+            <span class="group-title">{{ itemGroup.groupName }}</span>
+            <div 
+              class="add-icon" 
+              @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
 
         <div class="shortcuts-container">
           <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;"
@@ -378,11 +391,6 @@ onBeforeUnmount(() => {
                 @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
             />
           </VueDraggable>
-          <!-- "+" 添加新导航按钮 -->
-          <div class="shortcut-card add-card"
-               @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false">
-            <div class="plus-icon">+</div>
-          </div>
         </div>
       </div>
     </div>
@@ -500,34 +508,44 @@ onBeforeUnmount(() => {
 .shortcuts-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 15px;
   margin-bottom: 30px;
+}
+
+.group-header {
+  margin-bottom: 15px;
+}
+
+.group-title-container {
+  display: inline-flex;
+  align-items: center;
 }
 
 .group-title {
   font-size: 1.2em;
   font-weight: bold;
-  margin-bottom: 15px;
-  display: block;
-  text-align: center;
+  color: #ffffff;
+  margin-right: 10px; /* 为 "+" 号留出空间 */
 }
 
-.add-card {
-  display: flex;
-  justify-content: center;
-  align-items: center; /* 垂直居中 */
-  height: 100px; /* 确保有足够的高度 */
-  //width: 100px; /* 确保有足够的宽度 */
-  color: #42b883;
-  font-size: 2em;
-  font-weight: bold;
+.add-icon {
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.plus-icon {
-  font-size: 2em;
-  user-select: none;
+.group-title-container:hover .add-icon {
+  opacity: 1;
+}
+
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
 }
 
 .custom-button {
@@ -691,6 +709,16 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 </style>
+
+
+
+
+
+
+
+
+
+
 
 
 
