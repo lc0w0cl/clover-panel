@@ -319,10 +319,20 @@ const deleteLogo = async () => {
 
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
+// 添加 isLoading 的定义
+const isLoading = ref(true);
+
 // 在组件挂载时,先获取分组,然后获取快捷方式
 onMounted(async () => {
-  await fetchGroups();
-  await fetchShortcuts();
+  isLoading.value = true;
+  try {
+    await fetchGroups();
+    await fetchShortcuts();
+  } catch (error) {
+    console.error('Error loading data:', error);
+  } finally {
+    isLoading.value = false;
+  }
   window.addEventListener('click', handleOutsideClick as EventListener);
   
   // 在下一个 tick 中聚焦搜索框
@@ -745,6 +755,7 @@ onBeforeUnmount(() => {
   100% { transform: rotate(360deg); }
 }
 </style>
+
 
 
 
