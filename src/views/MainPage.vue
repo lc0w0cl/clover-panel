@@ -308,7 +308,7 @@ const deleteLogo = async () => {
       const response = await axios.delete('/api/delete-logo', {
         params: { filename: form.icon } // 替换为实际的文件路径
       });
-      console.log('文件删除成功:', response.data);
+      console.log('件删除成功:', response.data);
       // ElMessage.success('文件删除成功');
     } catch (error) {
       console.error('删除文件失败:', error);
@@ -356,7 +356,7 @@ onBeforeUnmount(() => {
       <el-icon><Setting /></el-icon>
     </el-button>
 
-    <!-- 添加一个包装器来调整 SearchBar 的位置 -->
+    <!-- 添加一个包装器来调整 SearchBar 位置 -->
     <div class="search-bar-wrapper">
       <SearchBar ref="searchBarRef"/>
     </div>
@@ -389,39 +389,52 @@ onBeforeUnmount(() => {
 
 
     <!--    新增/编辑导航栏-->
-    <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500" @close="resetForm">
-      <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm">
-        <el-form-item label="" prop="title">
-          <span>名称</span>
-          <el-input v-model="form.title" autocomplete="off"/>
-        </el-form-item>
-        <el-form-item label="">
-          <span>图标</span>
-          <el-input v-model="form.icon" autocomplete="off">
-            <template #append>
-              <el-button @click="triggerFileUpload">上传图标</el-button>
-            </template>
-          </el-input>
-          <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none;"/>
-        </el-form-item>
-        <el-form-item label="" prop="internalNetwork">
-          <span>公网地址</span>
-          <el-input v-model="form.internalNetwork" autocomplete="off">
-            <template #append>
-              <el-button @click="fetchLogo">获取图标</el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="">
-          <span>内网地址</span>
-          <el-input v-model="form.privateNetwork" autocomplete="off" style=""/>
-        </el-form-item>
+    <el-dialog 
+      v-model="dialogFormVisible" 
+      :title="dialogTitle" 
+      width="600" 
+      @close="resetForm"
+      custom-class="custom-dialog"
+    >
+      <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm" label-position="top">
+        <div class="form-row">
+          <div class="form-left">
+            <el-form-item label="名称" prop="title">
+              <el-input v-model="form.title" autocomplete="off"/>
+            </el-form-item>
+            <el-form-item label="图标">
+              <el-input v-model="form.icon" autocomplete="off">
+                <template #append>
+                  <el-button @click="triggerFileUpload">上传图标</el-button>
+                </template>
+              </el-input>
+              <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none;"/>
+            </el-form-item>
+          </div>
+          <div class="form-right">
+            <el-form-item label=" " class="logo-preview">
+              <img :src="form.icon" v-if="form.icon" alt="Logo预览" class="preview-image">
+              <div v-else class="no-image"></div>
+            </el-form-item>
+          </div>
+        </div>
+        <div class="address-row">
+          <el-form-item label="公网地址" prop="internalNetwork" class="address-item">
+            <el-input v-model="form.internalNetwork" autocomplete="off">
+              <template #append>
+                <el-button @click="fetchLogo">获取图标</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="内网地址" class="address-item">
+            <el-input v-model="form.privateNetwork" autocomplete="off"/>
+          </el-form-item>
+        </div>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm(ruleFormRef)">
-            保存
-          </el-button>
+          <el-button @click="dialogFormVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm(ruleFormRef)">保存</el-button>
         </div>
       </template>
     </el-dialog>
@@ -471,7 +484,7 @@ onBeforeUnmount(() => {
 }
 
 .navigation-display {
-  margin-top: 30px; /* 给导航显示区域添加一些上边距 */
+  margin-top: 30px; /* 给导显示区域添加一些上边距 */
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -555,7 +568,135 @@ onBeforeUnmount(() => {
 .setting-toggle .el-icon {
   font-size: 1.2em;
 }
+
+.custom-dialog {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog) {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  padding: 15px;
+}
+
+:deep(.el-dialog__body) {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+:deep(.el-dialog__footer) {
+  background-color: rgba(245, 247, 250, 0.8);
+}
+
+.address-row {
+  display: flex;
+  gap: 20px;
+}
+
+.address-item {
+  flex: 1;
+}
+
+:deep(.el-form-item__content) {
+  width: 100%;
+}
+
+:deep(.el-input-group__append) {
+  background-color: #409EFF;
+  border-color: #409EFF;
+  color: white;
+}
+
+:deep(.el-input-group__append .el-button) {
+  color: white;
+  border: none;
+  background-color: transparent;
+}
+
+:deep(.el-input-group__append .el-button:hover) {
+  color: #ecf5ff;
+}
+
+:deep(.el-dialog__title) {
+  font-size: 16px;
+  /* font-weight: bold; */
+}
+
+:deep(.el-form-item__label) {
+  font-weight: normal;
+}
+
+:deep(.el-input__inner) {
+  font-size: 14px;
+}
+
+:deep(.el-button) {
+  font-size: 14px;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+
+.dialog-footer .el-button + .el-button {
+  margin-left: 10px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start; /* 确保顶部对齐 */
+}
+
+.form-left {
+  flex: 1;
+}
+
+.form-right {
+  width: 120px;
+}
+
+.logo-preview {
+  height: 100%;
+}
+
+.logo-preview :deep(.el-form-item__label) {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.preview-image {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.no-image {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #dcdfe6;
+  border-radius: 15px;
+  color: #909399;
+  font-size: 14px;
+}
 </style>
+
+
+
+
+
+
 
 
 
