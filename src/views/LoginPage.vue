@@ -89,6 +89,7 @@ const handleLogin = async () => {
   background-repeat: no-repeat;
   opacity: 0;
   transition: opacity 1s ease-in-out;
+  z-index: 1;
 }
 
 .login-container.bg-loaded::after {
@@ -111,13 +112,14 @@ const handleLogin = async () => {
   width: 350px;
   padding: 40px;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
   border-radius: 15px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.5s ease, transform 0.5s ease;
+  position: relative;
+  z-index: 2;
 }
 
 .fade-in {
