@@ -1,6 +1,6 @@
 <template>
   <div class="system-settings-container">
-    <h2>系统设置(假的，还没做)</h2>
+    <h2>系统设置</h2>
     <el-form :model="settingsForm" label-position="top">
       <el-form-item label="主题">
         <el-select v-model="settingsForm.theme" placeholder="请选择主题">
@@ -24,6 +24,14 @@
           <el-checkbox label="push">推送通知</el-checkbox>
         </el-checkbox-group>
       </el-form-item>
+      <!-- 新增搜索引擎设置 -->
+      <el-form-item label="默认搜索引擎">
+        <el-select v-model="settingsForm.searchEngine" placeholder="请选择搜索引擎">
+          <el-option label="Google" value="google"></el-option>
+          <el-option label="Bing" value="bing"></el-option>
+          <el-option label="百度" value="baidu"></el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="saveSettings" :loading="isSaving">保存设置</el-button>
       </el-form-item>
@@ -39,7 +47,8 @@ const settingsForm = reactive({
   theme: 'light',
   language: 'zh',
   autoUpdate: true,
-  notifications: ['email']
+  notifications: ['email'],
+  searchEngine: 'google' // 新增搜索引擎设置
 })
 
 const isSaving = ref(false)
@@ -49,10 +58,12 @@ const saveSettings = async () => {
   try {
     // 这里应该是保存设置到后端的逻辑
     await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟异步操作
+    // 保存成功后,更新本地存储
+    localStorage.setItem('searchEngine', settingsForm.searchEngine)
     ElMessage.success('设置保存成功')
   } catch (error) {
     console.error('保存设置失败:', error)
-    ElMessage.error('保存设置失败，请稍后重试')
+    ElMessage.error('保存设置失败,请稍后重试')
   } finally {
     isSaving.value = false
   }

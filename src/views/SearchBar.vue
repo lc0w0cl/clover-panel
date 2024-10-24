@@ -7,44 +7,89 @@
         </svg>
       </div>
       <input
+          ref="inputRef"
           type="text"
           v-model="query"
-          placeholder="搜索 Google 或输入网址"
+          :placeholder="searchPlaceholder"
           @keyup.enter="submitSearch"
           @focus="isFocused = true"
           @blur="isFocused = false"
-          ref="searchInput"
       />
-      <div class="google-logo">
-        <img src="/src/assets/logo/谷歌.svg" alt="Google Logo" />
+      <div class="search-engine-logo">
+        <img :src="searchEngineLogo" :alt="searchEngine + ' Logo'" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const query = ref('');
 const isFocused = ref(false);
-const searchInput = ref(null);
+const searchEngine = ref('google');
+const inputRef = ref(null);
+
+onMounted(() => {
+  // 从本地存储中获取搜索引擎设置
+  const savedEngine = localStorage.getItem('searchEngine');
+  if (savedEngine) {
+    searchEngine.value = savedEngine;
+  }
+});
+
+const searchEngineLogo = computed(() => {
+  switch (searchEngine.value) {
+    case 'google':
+      return '/src/assets/logo/谷歌.svg';
+    case 'bing':
+      return '/src/assets/logo/必应.svg';
+    case 'baidu':
+      return '/src/assets/logo/baidu.svg';
+    default:
+      return '/src/assets/logo/谷歌.svg';
+  }
+});
+
+const searchPlaceholder = computed(() => {
+  switch (searchEngine.value) {
+    case 'google':
+      return '搜索 Google 或输入网址';
+    case 'bing':
+      return '必应搜索';
+    case 'baidu':
+      return '百度一下,你就知道';
+    default:
+      return '搜索或输入网址';
+  }
+});
 
 const submitSearch = () => {
   if (query.value.trim() !== '') {
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(query.value)}`;
-    window.open(googleSearchUrl, '_blank');
+    let searchUrl;
+    switch (searchEngine.value) {
+      case 'google':
+        searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query.value)}`;
+        break;
+      case 'bing':
+        searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query.value)}`;
+        break;
+      case 'baidu':
+        searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query.value)}`;
+        break;
+      default:
+        searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query.value)}`;
+    }
+    window.open(searchUrl, '_blank');
   }
 };
 
-onMounted(() => {
-  searchInput.value.focus();
-});
-
-// 暴露一个方法以便外部组件可以触发聚焦
+// 添加 focus 方法
 const focus = () => {
-  searchInput.value.focus();
+  inputRef.value?.focus();
 };
 
+// 暴露 focus 方法
 defineExpose({ focus });
 </script>
 
@@ -100,14 +145,14 @@ defineExpose({ focus });
   color: rgba(255, 255, 255, 0.5);
 }
 
-.google-logo {
+.search-engine-logo {
   display: flex;
   align-items: center;
   padding: 0 8px;
   cursor: pointer;
 }
 
-.google-logo img {
+.search-engine-logo img {
   height: 24px;
   width: auto;
 }
