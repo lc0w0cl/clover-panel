@@ -82,7 +82,7 @@ steps:
       key:
         from_secret: SSH_KEY  # 引用 SSH 密钥
       source: ./docker-compose-nginx.yml
-      target: ~/panel/docker-compose.yml
+      target: ~/panel
   - name: deploy
     image: appleboy/drone-ssh
     depends_on: [upload yml]
@@ -96,5 +96,5 @@ steps:
       port: 22
       command_timeout: 4m
       script:
-        - docker compose -f ~/panel/docker-compose.yml pull
-        - docker compose -f ~/panel/docker-compose.yml up -d --force-recreate
+        - docker compose -f ~/panel/docker-compose-nginx.yml pull
+        - docker compose -f ~/panel/docker-compose-nginx.yml up -d --force-recreate
