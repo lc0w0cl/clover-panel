@@ -44,7 +44,7 @@ steps:
 
 trigger:
   branch:
-    - private
+    - main
 
 ---
 
@@ -81,8 +81,8 @@ steps:
         from_secret: SSH_USER
       key:
         from_secret: SSH_KEY  # 引用 SSH 密钥
-      source: ./docker-compose.yml
-      target: ~/panel
+      source: ./docker-compose-nginx.yml
+      target: ~/panel/docker-compose.yml
   - name: deploy
     image: appleboy/drone-ssh
     depends_on: [upload yml]
