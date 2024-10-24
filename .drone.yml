@@ -44,7 +44,7 @@ steps:
 
 trigger:
   branch:
-    - main
+    - private
 
 ---
 
