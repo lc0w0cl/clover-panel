@@ -31,7 +31,6 @@ const searchEngine = ref('google');
 const inputRef = ref(null);
 
 onMounted(() => {
-  // 从本地存储中获取搜索引擎设置
   const savedEngine = localStorage.getItem('searchEngine');
   if (savedEngine) {
     searchEngine.value = savedEngine;
@@ -39,15 +38,18 @@ onMounted(() => {
 });
 
 const searchEngineLogo = computed(() => {
+  const isProd = import.meta.env.PROD;
+  const basePath = isProd ? '/logo/' : '/assets/logo/';
+  
   switch (searchEngine.value) {
     case 'google':
-      return '/src/assets/logo/谷歌.svg';
+      return `${basePath}谷歌.svg`;
     case 'bing':
-      return '/src/assets/logo/必应.svg';
+      return `${basePath}必应.svg`;
     case 'baidu':
-      return '/src/assets/logo/baidu.svg';
+      return `${basePath}baidu.svg`;
     default:
-      return '/src/assets/logo/谷歌.svg';
+      return `${basePath}谷歌.svg`;
   }
 });
 
