@@ -128,7 +128,7 @@ const selectedItem = ref(null);
 const saveShortcut = async () => {
   const shortcutData = {
     groupId: groups.value[selectedGroupShortcutIndex.value].id,
-    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].order,
+    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.length + 1, // 确保 orderNum 是最后一个
     title: form.title,
     icon: form.icon,
     internalNetwork: form.internalNetwork,
@@ -755,6 +755,7 @@ onBeforeUnmount(() => {
   100% { transform: rotate(360deg); }
 }
 </style>
+
 
 
 
