@@ -393,7 +393,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="shortcuts-container">
-          <VueDraggable ref="el" v-model="itemGroup.shortcuts" style="display: flex;"
+          <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
                         @update="dragCompleted(groups[groupIndex].id)">
             <ShortcutCard
                 v-for="(item, index) in itemGroup.shortcuts"
@@ -753,6 +753,10 @@ onBeforeUnmount(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.drag{
+  display: flex;
+  flex-wrap: wrap;
 }
 </style>
 
