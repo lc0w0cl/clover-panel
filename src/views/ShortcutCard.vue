@@ -92,9 +92,9 @@ const openLink = () => {
   transform: scale(1.15) translateY(-10px);
 }
 
-.shortcut-card:hover .icon-wrapper {
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-}
+/* .shortcut-card:hover .icon-wrapper { */
+  /* box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); */
+/* } */
 
 .shortcut-card:hover .icon {
   transform: scale(1.15);
