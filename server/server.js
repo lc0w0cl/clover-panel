@@ -33,6 +33,21 @@ initializeDatabase(dbDir).then(() => {
     process.exit(1);
 });
 
+// 新增: 中间件函数用于验证 token
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) return res.sendStatus(401);
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+
+
 // 设置 multer 存储配置
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -48,7 +63,7 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage});
 
 // 文件上传接口
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', authenticateToken, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send({error: 'No file uploaded'});
     }
@@ -61,8 +76,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.send({message: '文件上传成功', filepath: filepath});
 });
 
-
-app.get('/api/fetch-logo', async (req, res) => {
+app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     const {url} = req.query;
     try {
         // 确保只传递域名部分
@@ -74,14 +88,14 @@ app.get('/api/fetch-logo', async (req, res) => {
 
         fs.writeFileSync(logoPath, logoResponse.data);
         const filepath = isDev ? `/src/assets/logo/${domain}.png` : `/logo/${domain}.png`;
-        res.json({message: '文件保存��功', path: filepath});
+        res.json({message: '文件保存成功', path: filepath});
     } catch (error) {
         console.log(error);
         res.status(500).json({error: '抓取logo失败'});
     }
 });
 
-app.delete('/api/delete-logo', (req, res) => {
+app.delete('/api/delete-logo', authenticateToken, (req, res) => {
     const {filename} = req.query;
     let fullPath;
     if (isDev) {
@@ -103,7 +117,7 @@ app.delete('/api/delete-logo', (req, res) => {
 app.use(express.json());
 
 // 修改获取快捷方式的API
-app.get('/api/shortcuts', (req, res) => {
+app.get('/api/shortcuts', authenticateToken, (req, res) => {
     const sql = `SELECT s.*, g.name as groupName
                  FROM shortcuts s
                           JOIN groups g ON s.groupId = g.id
@@ -121,7 +135,7 @@ app.get('/api/shortcuts', (req, res) => {
 });
 
 // 修改新增快捷方式的API
-app.post('/api/shortcuts', (req, res) => {
+app.post('/api/shortcuts', authenticateToken, (req, res) => {
     const {groupId, orderNum, title, icon, internalNetwork, privateNetwork} = req.body;
     const sql = `INSERT INTO shortcuts (groupId, orderNum, title, icon, internalNetwork, privateNetwork)
                  VALUES (?, ?, ?, ?, ?, ?)`;
@@ -140,37 +154,7 @@ app.post('/api/shortcuts', (req, res) => {
 });
 
 // 修改更新特定组内快捷方式的API
-app.put('/api/shortcuts/group/:groupId', (req, res) => {
-    const {groupId} = req.params;
-    const shortcuts = req.body.shortcuts;
-
-    // 为每个快捷方式构建更新语句
-    shortcuts.forEach((shortcut, index) => {
-        const sql = `UPDATE shortcuts
-                     SET orderNum = ?
-                     WHERE id = ?
-                       AND groupId = ?`;
-        const params = [shortcut.orderNum, shortcut.id, groupId];
-
-        db.run(sql, params, function (err) {
-            if (err) {
-                console.error(`更新失败: ${err.message}`);
-                res.status(400).json({"error": err.message});
-                return;
-            }
-        });
-    });
-
-    // 响应客户端
-    res.json({
-        "message": "快捷方式更新成功",
-        "groupId": groupId
-    });
-});
-
-
-// 更新特定组内的快捷方式
-app.put('/api/shortcuts/group/:groupId', (req, res) => {
+app.put('/api/shortcuts/group/:groupId', authenticateToken, (req, res) => {
     const {groupId} = req.params;
     const shortcuts = req.body.shortcuts;
 
@@ -199,7 +183,7 @@ app.put('/api/shortcuts/group/:groupId', (req, res) => {
 });
 
 // 删除快捷方式
-app.delete('/api/shortcuts/:id', (req, res) => {
+app.delete('/api/shortcuts/:id', authenticateToken, (req, res) => {
     const {id} = req.params;
     const sql = `DELETE
                  FROM shortcuts
@@ -264,13 +248,9 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 启动服务器
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
-});
 
 // 获取所有分组
-app.get('/api/groups', (req, res) => {
+app.get('/api/groups', authenticateToken, (req, res) => {
     const sql = `SELECT *
                  FROM groups
                  ORDER BY sort`;
@@ -287,7 +267,7 @@ app.get('/api/groups', (req, res) => {
 });
 
 // 添加新分组
-app.post('/api/groups', (req, res) => {
+app.post('/api/groups', authenticateToken, (req, res) => {
     const {name, sort} = req.body;
     const sql = `INSERT INTO groups (name, sort)
                  VALUES (?, ?)`;
@@ -303,8 +283,38 @@ app.post('/api/groups', (req, res) => {
     });
 });
 
+// 更新分组排序
+app.put('/api/groups/order', authenticateToken, (req, res) => {
+    const groups = req.body.groups;
+
+    const updatePromises = groups.map(group => {
+        const sql = `UPDATE groups SET sort = ? WHERE id = ?`;
+        return new Promise((resolve, reject) => {
+            db.run(sql, [group.order, group.id], function (err) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(this.changes);
+                }
+            });
+        });
+    });
+
+    Promise.all(updatePromises)
+        .then(results => {
+            const totalChanges = results.reduce((acc, changes) => acc + changes, 0);
+            res.json({
+                "message": "success",
+                "changes": totalChanges
+            });
+        })
+        .catch(err => {
+            res.status(400).json({"error": err.message});
+        });
+});
+
 // 更新分组
-app.put('/api/groups/:id', (req, res) => {
+app.put('/api/groups/:id', authenticateToken, (req, res) => {
     const {name, sort} = req.body;
     const {id} = req.params;
     const sql = `UPDATE groups
@@ -324,7 +334,7 @@ app.put('/api/groups/:id', (req, res) => {
 });
 
 // 删除分组
-app.delete('/api/groups/:id', (req, res) => {
+app.delete('/api/groups/:id', authenticateToken, (req, res) => {
     const {id} = req.params;
     const sql = `DELETE
                  FROM groups
@@ -342,81 +352,6 @@ app.delete('/api/groups/:id', (req, res) => {
 });
 
 // 更新快捷方式
-app.put('/api/shortcuts/:id', (req, res) => {
-    const { id } = req.params;
-    const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
-    const sql = `UPDATE shortcuts 
-                 SET groupId = ?, 
-                     orderNum = ?, 
-                     title = ?, 
-                     icon = ?, 
-                     internalNetwork = ?, 
-                     privateNetwork = ?
-                 WHERE id = ?`;
-    const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork, id];
-
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "changes": this.changes
-        });
-    });
-});
-
-// 新增: 中间件函数用于验证 token
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token == null) return res.sendStatus(401);
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-};
-
-// 为需要身份验证的路由添加中间件
-app.get('/api/shortcuts', authenticateToken, (req, res) => {
-    const sql = `SELECT s.*, g.name as groupName
-                 FROM shortcuts s
-                          JOIN groups g ON s.groupId = g.id
-                 ORDER BY g.sort, s.orderNum`;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "data": rows
-        });
-    });
-});
-
-app.post('/api/shortcuts', authenticateToken, (req, res) => {
-    const {groupId, orderNum, title, icon, internalNetwork, privateNetwork} = req.body;
-    const sql = `INSERT INTO shortcuts (groupId, orderNum, title, icon, internalNetwork, privateNetwork)
-                 VALUES (?, ?, ?, ?, ?, ?)`;
-    const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork];
-
-    db.run(sql, params, function (err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "data": {id: this.lastID}
-        });
-    });
-});
-
 app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
@@ -442,93 +377,6 @@ app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
     });
 });
 
-app.delete('/api/shortcuts/:id', authenticateToken, (req, res) => {
-    const {id} = req.params;
-    const sql = `DELETE
-                 FROM shortcuts
-                 WHERE id = ?`;
-
-    db.run(sql, id, function (err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        console.log(`已删除ID为 ${id} 的快捷方式`); // 打印删除的快捷方式 ID
-        res.json({
-            "message": "成功",
-            "changes": this.changes  // 返回被删除的行数
-        });
-    });
-});
-
-// 同样为 groups 相关的路由添加身份验证
-app.get('/api/groups', authenticateToken, (req, res) => {
-    const sql = `SELECT *
-                 FROM groups
-                 ORDER BY sort`;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "data": rows
-        });
-    });
-});
-
-app.post('/api/groups', authenticateToken, (req, res) => {
-    const {name, sort} = req.body;
-    const sql = `INSERT INTO groups (name, sort)
-                 VALUES (?, ?)`;
-    db.run(sql, [name, sort], function (err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "data": {id: this.lastID}
-        });
-    });
-});
-
-app.put('/api/groups/:id', authenticateToken, (req, res) => {
-    const {name, sort} = req.body;
-    const {id} = req.params;
-    const sql = `UPDATE groups
-                 SET name = ?,
-                     sort = ?
-                 WHERE id = ?`;
-    db.run(sql, [name, sort, id], function (err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "changes": this.changes
-        });
-    });
-});
-
-app.delete('/api/groups/:id', authenticateToken, (req, res) => {
-    const {id} = req.params;
-    const sql = `DELETE
-                 FROM groups
-                 WHERE id = ?`;
-    db.run(sql, id, function (err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "changes": this.changes
-        });
-    });
-});
 
 app.post('/api/change-password', authenticateToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
@@ -561,4 +409,11 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
       res.json({ success: true, message: '密码已成功更新' });
     });
   });
+});
+
+
+
+// 启动服务器
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}/`);
 });

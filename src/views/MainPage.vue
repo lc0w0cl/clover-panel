@@ -345,6 +345,26 @@ onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick as EventListener);
 });
 
+// 分组拖拽完成后的处理函数
+const onGroupDragEnd = async () => {
+  // 更新分组顺序
+  shortcutsGroup.value.forEach((group, index) => {
+    group.order = index + 1;
+  });
+
+  try {
+    const response = await axios.put('/api/groups/order', {
+      groups: shortcutsGroup.value.map(group => ({
+        id: groups.value.find(g => g.name === group.groupName)?.id,
+        order: group.order
+      }))
+    });
+    console.log('分组顺序更新成功:', response.data);
+  } catch (error) {
+    console.error('分组顺序更新失败:', error);
+  }
+};
+
 </script>
 
 <template>
@@ -376,36 +396,38 @@ onBeforeUnmount(() => {
 
     <!-- 现有的导航展示 -->
     <div class="navigation-display">
-      <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-        <div class="group-header">
-          <div class="group-title-container">
-            <span class="group-title">{{ itemGroup.groupName }}</span>
-            <div 
-              class="add-icon" 
-              @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-              </svg>
+      <VueDraggable v-model="shortcutsGroup" @end="onGroupDragEnd">
+        <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+          <div class="group-header">
+            <div class="group-title-container">
+              <span class="group-title">{{ itemGroup.groupName }}</span>
+              <div 
+                class="add-icon" 
+                @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                  <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="shortcuts-container">
-          <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
-                        @update="dragCompleted(groups[groupIndex].id)">
-            <ShortcutCard
-                v-for="(item, index) in itemGroup.shortcuts"
-                :key="item.title"
-                :title="item.title"
-                :icon="item.icon"
-                :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
-                @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-            />
-          </VueDraggable>
+          <div class="shortcuts-container">
+            <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
+                          @update="dragCompleted(groups[groupIndex].id)">
+              <ShortcutCard
+                  v-for="(item, index) in itemGroup.shortcuts"
+                  :key="item.title"
+                  :title="item.title"
+                  :icon="item.icon"
+                  :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
+                  @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+              />
+            </VueDraggable>
+          </div>
         </div>
-      </div>
+      </VueDraggable>
     </div>
 
 
