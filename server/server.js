@@ -1,17 +1,24 @@
 import express from 'express';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import * as fs from "fs";
 import path from "node:path";
 import multer from 'multer';
 import axios from "axios";
+import crypto from 'crypto';
 import { initializeDatabase, db } from './database.js';
 
 const app = express();
 const port = 3000;
 
-// JWT 密钥设置
-const JWT_SECRET = 'your_jwt_secret';  // 在实际应用中，请使用更安全的密钥并妥善保管
+// 在文件开头添加变量声明
+let JWT_SECRET = crypto.randomBytes(64).toString('hex');
+let defaultUser;
+
+// 修改默认配置对象
+const defaultConfig = {
+    username: "admin",
+    password: "admin123"
+};
 
 // 环境设置
 const isDev = process.env.NODE_ENV !== 'production';
@@ -24,6 +31,34 @@ if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, {recursive: true});
     console.log('目录创建成功');
 }
+
+// 修改配置初始化函数
+const initializeConfig = () => {
+    const configPath = isDev ? './config/auth.json' : '/app/config/auth.json';
+
+    try {
+        if (!fs.existsSync(configPath)) {
+            // 确保配置目录存在
+            const configDir = path.dirname(configPath);
+            if (!fs.existsSync(configDir)) {
+                fs.mkdirSync(configDir, { recursive: true });
+            }
+            // 写入新的配置文件，使用默认配置
+            fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+            console.log('配置文件已创建');
+        }
+
+        // 读取配置
+        defaultUser = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        console.log('配置加载成功');
+    } catch (err) {
+        console.error('配置初始化失败:', err);
+        process.exit(1);
+    }
+};
+
+// 在数据库初始化之前调用配置初始化
+initializeConfig();
 
 // 初始化数据库
 initializeDatabase(dbDir).then(() => {
@@ -202,49 +237,28 @@ app.delete('/api/shortcuts/:id', authenticateToken, (req, res) => {
     });
 });
 
-// 注册新用户
-app.post('/api/register', async (req, res) => {
-    const {username, password} = req.body;
-    try {
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-        const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
-        db.run(sql, [username, hashedPassword], function (err) {
-            if (err) {
-                return res.status(400).send({error: err.message});
-            }
-            res.send({message: 'User registered', id: this.lastID});
-        });
-    } catch (error) {
-        res.status(500).send({error: error.message});
-    }
-})
-
 // 用户登录
 app.post('/api/login', (req, res) => {
-    const {username, password} = req.body;
-    const sql = 'SELECT * FROM users WHERE username = ?';
+    const { username, password } = req.body;
+    
+    // 检查是否匹配配置文件中的用户
+    if (username === defaultUser.username && password === defaultUser.password) {
+        const token = jwt.sign(
+            { userId: 'default', username: username },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        return res.json({ 
+            success: true,
+            message: 'Login successful', 
+            token 
+        });
+    }
 
-    db.get(sql, [username], async (err, user) => {
-        if (err) {
-            return res.status(400).send({error: err.message});
-        }
-        if (user) {
-            const match = await bcrypt.compare(password, user.password);
-            if (match) {
-                // 创建 JWT
-                const token = jwt.sign(
-                    { userId: user.id, username: user.username },
-                    JWT_SECRET,
-                    { expiresIn: '24h' }  // Token 有效期为 24 小时
-                );
-                res.json({ message: 'Login successful', token });
-            } else {
-                res.status(401).json({ message: 'Invalid credentials' });
-            }
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
+    // 如果不匹配，返回错误
+    res.status(401).json({ 
+        success: false,
+        message: '用户名或密码错误' 
     });
 });
 
@@ -397,7 +411,7 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, message: '当前密码不正确' });
     }
 
-    // 哈希新密码
+    // 希新密码
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 

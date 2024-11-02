@@ -29,6 +29,9 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 # 复制 Supervisor 配置文件
 COPY supervisord.conf /etc/supervisord.conf
 
+# 创建配置目录
+RUN mkdir -p /app/config
+
 # 暴露端口
 EXPOSE 80 3000
 

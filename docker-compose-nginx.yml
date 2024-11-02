@@ -8,6 +8,7 @@ services:
       - nginx
     volumes:
       - ./db:/app/db
+      - ./config:/app/config
       - logo_data:/app/logo
 
 networks:

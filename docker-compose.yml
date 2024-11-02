@@ -6,6 +6,7 @@ services:
      - 82:80
     volumes:
       - ./db:/app/db
+      - ./config:/app/config
       - logo_data:/app/logo
 volumes:
   logo_data:

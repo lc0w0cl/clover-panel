@@ -1,6 +1,5 @@
 import sqlite3 from 'sqlite3';
 import path from 'node:path';
-import bcrypt from 'bcrypt';
 
 let db;
 
@@ -43,20 +42,6 @@ function createTables() {
                 }
             });
 
-            // 创建 users 表
-            db.run(`CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password TEXT
-            )`, (err) => {
-                if (err) {
-                    console.error("创建用户表时出错:", err.message);
-                    reject(err);
-                } else {
-                    insertDefaultUser();
-                }
-            });
-
             // 创建 groups 表
             db.run(`CREATE TABLE IF NOT EXISTS groups (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,34 +60,6 @@ function createTables() {
 
             resolve();
         });
-    });
-}
-
-function insertDefaultUser() {
-    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-        if (err) {
-            console.error("检查用户表时出错:", err.message);
-            return;
-        }
-        
-        if (row.count === 0) {
-            const insert = `INSERT INTO users (username, password) VALUES (?, ?)`;
-            bcrypt.hash('root', 10, (err, hash) => {
-                if (err) {
-                    console.error("密码哈希时出错:", err.message);
-                } else {
-                    db.run(insert, ['root', hash], (err) => {
-                        if (err) {
-                            console.error("插入默认用户时出错:", err.message);
-                        } else {
-                            console.log("已插入默认root用户。");
-                        }
-                    });
-                }
-            });
-        } else {
-            console.log("用户表已有数据，跳过默认用户插入。");
-        }
     });
 }
 
