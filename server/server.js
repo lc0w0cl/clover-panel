@@ -34,7 +34,7 @@ if (!fs.existsSync(dbDir)) {
 
 // 修改配置初始化函数
 const initializeConfig = () => {
-    const configPath = isDev ? './config/auth.json' : '/app/config/auth.json';
+    const configPath = isDev ? './config/config.json' : '/app/config/config.json';
 
     try {
         if (!fs.existsSync(configPath)) {

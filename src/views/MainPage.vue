@@ -3,12 +3,11 @@ import ShortcutCard from './ShortcutCard.vue';
 import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue"; // 合并导入
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
-import SettingPage from "./SettingPage.vue";
 import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
-import {Setting} from '@element-plus/icons-vue'
+import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
 
 // 添加网络模式状态
@@ -89,8 +88,6 @@ const dialogFormVisible = ref(false)
 const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导航'));
 // 上传了新的logo，如果上传了新的logo，没有保存则需要删除
 let upload_new_logo = ref(false);
-
-const settingPageVisible = ref(false)
 
 interface RuleForm {
   id: string; // 添加 id 属性
@@ -306,7 +303,7 @@ const deleteLogo = async () => {
   if (upload_new_logo.value) {
     try {
       const response = await axios.delete('/api/delete-logo', {
-        params: { filename: form.icon } // 替换为实际的文件路径
+        params: { filename: form.icon } // 换为实际的文件路径
       });
       console.log('件删功:', response.data);
       // ElMessage.success('文件删除成功');
@@ -339,10 +336,12 @@ onMounted(async () => {
   setTimeout(() => {
     searchBarRef.value?.focus();
   }, 0);
+  document.addEventListener('click', handleClickOutside)
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick as EventListener);
+  document.removeEventListener('click', handleClickOutside)
 });
 
 // 分组拖拽完成后的处理函数
@@ -365,6 +364,111 @@ const onGroupDragEnd = async () => {
   }
 };
 
+const editingGroupId = ref<number | null>(null)
+const editingGroupName = ref('')
+
+// 修改编辑分组的方法
+const editGroup = (group: GroupItem, event: Event) => {
+  event.stopPropagation() // 阻止事件冒泡
+  editingGroupId.value = group.id
+  editingGroupName.value = group.name
+}
+
+// 添加保存分组名称的方法
+const saveGroupName = async (group: GroupItem) => {
+  if (!editingGroupId.value) return
+  
+  try {
+    const response = await axios.put(`/api/groups/${group.id}`, {
+      name: editingGroupName.value
+    })
+    if (response.data.message === 'success') {
+      // 更新本地数据
+      const groupToUpdate = groups.value.find(g => g.id === group.id)
+      if (groupToUpdate) {
+        groupToUpdate.name = editingGroupName.value
+      }
+      // 重新获取数据
+      await fetchGroups()
+      await fetchShortcuts()
+    }
+  } catch (error) {
+    console.error('Error updating group name:', error)
+  } finally {
+    editingGroupId.value = null
+  }
+}
+
+// 添加点击外部保存的处理函数
+const handleClickOutside = (event: MouseEvent) => {
+  if (editingGroupId.value !== null) {
+    const editInput = document.querySelector('.editing-group-name')
+    if (editInput && !editInput.contains(event.target as Node)) {
+      const group = groups.value.find(g => g.id === editingGroupId.value)
+      if (group) {
+        saveGroupName(group)
+      }
+    }
+  }
+}
+
+const addGroupDialogVisible = ref(false)
+const newGroupName = ref('')
+
+// 添加新建分组的方法
+const createNewGroup = async () => {
+  if (!newGroupName.value.trim()) return
+  
+  try {
+    const response = await axios.post('/api/groups', {
+      name: newGroupName.value,
+      sort: groups.value.length + 1 // 新分组放到最后
+    })
+    
+    if (response.data.message === 'success') {
+      // 重新获取数据
+      await fetchGroups()
+      await fetchShortcuts()
+      newGroupName.value = ''
+      addGroupDialogVisible.value = false
+    }
+  } catch (error) {
+    console.error('Error creating group:', error)
+  }
+}
+
+const deleteGroupVisible = ref(false)
+const deletingGroupId = ref<number | null>(null)
+const isDeleting = ref(false)
+
+// 添加删除分组的方法
+const deleteGroup = async (groupId: number) => {
+  if (!groupId) return
+  
+  try {
+    isDeleting.value = true
+    const response = await axios.delete(`/api/groups/${groupId}`)
+    if (response.data.message === 'success') {
+      // 重新获取数据
+      await fetchGroups()
+      await fetchShortcuts()
+    }
+  } catch (error) {
+    console.error('Error deleting group:', error)
+  } finally {
+    isDeleting.value = false
+    deleteGroupVisible.value = false
+    deletingGroupId.value = null
+  }
+}
+
+// 添加确认删的方法
+const confirmDeleteGroup = (group: GroupItem, event: Event) => {
+  event.stopPropagation()
+  deletingGroupId.value = group.id
+  deleteGroupVisible.value = true
+}
+
 </script>
 
 <template>
@@ -381,14 +485,6 @@ const onGroupDragEnd = async () => {
       {{ isInternalNetwork ? '内网模式' : '外网模式' }}
     </el-button>
     
-    <!-- 设置按钮 -->
-    <el-button
-      class="setting-toggle custom-button"
-      @click="settingPageVisible=true"
-    >
-      <el-icon><Setting /></el-icon>
-    </el-button>
-
     <!-- 添加一个包装器来调整 SearchBar 位置 -->
     <div class="search-bar-wrapper">
       <SearchBar ref="searchBarRef"/>
@@ -400,15 +496,44 @@ const onGroupDragEnd = async () => {
         <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
           <div class="group-header">
             <div class="group-title-container">
-              <span class="group-title">{{ itemGroup.groupName }}</span>
-              <div 
-                class="add-icon" 
-                @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+              <span 
+                v-if="editingGroupId !== groups[groupIndex].id" 
+                class="group-title"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                  <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                </svg>
+                {{ itemGroup.groupName }}
+              </span>
+              <el-input
+                v-else
+                v-model="editingGroupName"
+                class="editing-group-name"
+                size="small"
+                @keyup.enter="saveGroupName(groups[groupIndex])"
+                @click.stop
+              />
+              <div class="group-actions">
+                <div 
+                  class="delete-icon"
+                  @click="confirmDeleteGroup(groups[groupIndex], $event)"
+                >
+                  <el-icon><Delete /></el-icon>
+                </div>
+                <div 
+                  class="edit-icon"
+                  @click="editGroup(groups[groupIndex], $event)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 7L17 4L4 17L3 21L7 20L20 7Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div 
+                  class="add-icon" 
+                  @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -428,6 +553,16 @@ const onGroupDragEnd = async () => {
           </div>
         </div>
       </VueDraggable>
+      
+      <!-- 添加新建分组的悬浮按钮 -->
+      <div class="add-group-hover-area">
+        <div class="add-group-button" @click="addGroupDialogVisible = true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
     </div>
 
 
@@ -495,8 +630,53 @@ const onGroupDragEnd = async () => {
 
 
 
-  <el-dialog v-model="settingPageVisible" title="系统设置" width="800">
-    <SettingPage/>
+  <!-- 添加新建分组的对话框 -->
+  <el-dialog
+    v-model="addGroupDialogVisible"
+    title="新建分组"
+    width="400px"
+    custom-class="custom-dialog"
+  >
+    <el-form>
+      <el-form-item label="分组名称">
+        <el-input 
+          v-model="newGroupName" 
+          placeholder="请输入分组名称"
+          @keyup.enter="createNewGroup"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="addGroupDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="createNewGroup">确定</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 添加删除确认对话框 -->
+  <el-dialog
+    v-model="deleteGroupVisible"
+    title="删除分组"
+    width="400px"
+    custom-class="custom-dialog"
+  >
+    <div class="delete-confirm-content">
+      <el-icon class="warning-icon" color="#ff4d4f"><Warning /></el-icon>
+      <p>确定要删除该分组吗？删除后该分组下的所有航也将被删除！</p>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="deleteGroupVisible = false">取消</el-button>
+        <el-button 
+          type="danger" 
+          @click="deletingGroupId !== null && deleteGroup(deletingGroupId)"
+          :loading="isDeleting"
+        >
+          {{ isDeleting ? '正在删除...' : '确定删除' }}
+        </el-button>
+      </div>
+    </template>
   </el-dialog>
 
 
@@ -779,6 +959,234 @@ const onGroupDragEnd = async () => {
 .drag{
   display: flex;
   flex-wrap: wrap;
+}
+
+.group-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-left: 4px;
+  position: relative;
+}
+
+.group-title-container:hover .group-actions {
+  opacity: 1;
+}
+
+.edit-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.edit-icon:hover svg path {
+  stroke: #e6e6e6;
+}
+
+.edit-icon:hover {
+  transform: scale(1.1);
+}
+
+.edit-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.edit-icon svg {
+  transition: transform 0.3s ease;
+}
+
+.add-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
+}
+
+.add-icon:hover {
+  transform: scale(1.1);
+}
+
+.add-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.add-icon svg {
+  transition: transform 0.3s ease;
+}
+
+.delete-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ff4d4f;
+}
+
+.delete-icon:hover {
+  transform: scale(1.1);
+}
+
+.delete-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.delete-icon svg {
+  transition: transform 0.3s ease;
+}
+
+.delete-confirm-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.warning-icon {
+  font-size: 24px;
+}
+
+.delete-confirm-content p {
+  margin: 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.editing-group-name {
+  width: 120px;
+  margin-right: 4px;
+}
+
+.editing-group-name :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0 8px;
+}
+
+.editing-group-name :deep(.el-input__inner) {
+  color: white;
+  height: 24px;
+  line-height: 24px;
+  font-size: 1.2em;
+}
+
+.group-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ffffff;
+  margin-right: 4px;
+  min-width: 60px;
+  display: inline-block;
+}
+
+.add-group-hover-area {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  position: relative;
+}
+
+.add-group-button {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-group-hover-area:hover .add-group-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.add-group-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.add-group-button svg {
+  transition: transform 0.3s ease;
+}
+
+.add-group-button:hover svg {
+  transform: rotate(180deg);
+}
+
+.delete-icon:hover .el-icon,
+.edit-icon:hover svg,
+.add-icon:hover svg {
+  transform: scale(1.1) translateX(0) !important; /* 只保留缩放效果 */
+}
+
+.edit-icon svg path,
+.add-icon svg path {
+  stroke: white;
+  transition: stroke 0.2s ease;
+}
+
+.edit-icon:hover svg path,
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
+}
+
+.group-title-container:hover .delete-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0s;
+}
+
+.group-title-container:hover .edit-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.05s;
+}
+
+.group-title-container:hover .add-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.1s;
+}
+
+.delete-icon .el-icon,
+.edit-icon svg,
+.add-icon svg {
+  transition: all 0.3s ease;
 }
 </style>
 
