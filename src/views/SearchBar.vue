@@ -39,7 +39,7 @@ onMounted(() => {
 
 const searchEngineLogo = computed(() => {
   const isProd = import.meta.env.PROD;
-  const basePath = isProd ? '/logo/' : '/assets/logo/';
+  const basePath = isProd ? '/logo/' : '/src/assets/logo/';
   
   switch (searchEngine.value) {
     case 'google':
