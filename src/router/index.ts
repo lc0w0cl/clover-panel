@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginPage from '../views/LoginPage.vue';
 import MainPage from '../views/MainPage.vue';
 import { isAuthenticated } from '../utils/auth';
+import RainLoginPage from '../views/RainLoginPage.vue';
 
 const routes = [
   {
@@ -14,19 +14,18 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginPage
+    component: RainLoginPage
   },
   {
     path: '/home',
     name: 'Home',
     component: MainPage,
     meta: { requiresAuth: true }
-  },
-  // 你可以在这里添加更多的路由规则
+  }
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 });
 

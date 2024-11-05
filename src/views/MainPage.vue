@@ -9,6 +9,9 @@ import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
