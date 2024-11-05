@@ -44,7 +44,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { Rain } from '../components/RainEffect';
 import type { FormInstance, FormRules } from 'element-plus';
-import { User, Lock } from '@element-plus/icons-vue';
 import axios from 'axios';
 
 const router = useRouter();

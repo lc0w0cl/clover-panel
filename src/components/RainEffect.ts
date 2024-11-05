@@ -11,8 +11,8 @@ class RainDrop {
   size: number = 2;
   life: number = 0;
   ttl: number = 0;
-  position: Vector2;
-  velocity: Vector2;
+  position!: Vector2;
+  velocity!: Vector2;
   terminalVelocity: number = 8;
   parent: Rain;
 
@@ -49,11 +49,11 @@ interface RainProps {
 }
 
 export class Rain {
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private canvas!: HTMLCanvasElement;
+  private ctx!: CanvasRenderingContext2D;
   private rainDrops: RainDrop[] = [];
-  private dimensions: { width: number; height: number };
-  floor: number;
+  private dimensions!: { width: number; height: number };
+  floor!: number;
 
   constructor(private props: RainProps) {
     this.init();
