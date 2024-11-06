@@ -9,7 +9,6 @@ import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
-
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
 
@@ -233,9 +232,6 @@ const hideContextMenu = () => {
 
 
 const dragEnd = async () => {
-  console.log("end-----------------------");
-  console.log("所有快捷方式:", shortcutsGroup);
-
   // 创建一个数组来存储所有需要更新的快捷方式
   const updatedShortcuts: any[] = [];
 
@@ -255,9 +251,9 @@ const dragEnd = async () => {
     const response = await axios.put('/api/shortcuts/batch-update', {
       shortcuts: updatedShortcuts,
     });
-    console.log('快捷方式批量更新成功:', response.data);
+    ElMessage.success('更新成功');
   } catch (error) {
-    console.error('批量更新快捷方式失败:', error);
+    ElMessage.error('更新失败');
   }
 };
 
