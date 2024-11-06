@@ -366,30 +366,30 @@ app.delete('/api/groups/:id', authenticateToken, (req, res) => {
 });
 
 // 更新快捷方式
-app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
-    const { id } = req.params;
-    const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
-    const sql = `UPDATE shortcuts 
-                 SET groupId = ?, 
-                     orderNum = ?, 
-                     title = ?, 
-                     icon = ?, 
-                     internalNetwork = ?, 
-                     privateNetwork = ?
-                 WHERE id = ?`;
-    const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork, id];
-
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        res.json({
-            "message": "success",
-            "changes": this.changes
-        });
-    });
-});
+// app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
+//     const { id } = req.params;
+//     const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
+//     const sql = `UPDATE shortcuts
+//                  SET groupId = ?,
+//                      orderNum = ?,
+//                      title = ?,
+//                      icon = ?,
+//                      internalNetwork = ?,
+//                      privateNetwork = ?
+//                  WHERE id = ?`;
+//     const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork, id];
+//
+//     db.run(sql, params, function(err) {
+//         if (err) {
+//             res.status(400).json({"error": err.message});
+//             return;
+//         }
+//         res.json({
+//             "message": "success",
+//             "changes": this.changes
+//         });
+//     });
+// });
 
 
 app.post('/api/change-password', authenticateToken, async (req, res) => {
@@ -425,7 +425,37 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
   });
 });
 
+app.put('/api/shortcuts/batch-update', authenticateToken, (req, res) => {
+  const shortcuts = req.body.shortcuts;
 
+  const updatePromises = shortcuts.map(shortcut => {
+    const sql = `UPDATE shortcuts 
+                 SET groupId = ?, 
+                     orderNum = ? 
+                 WHERE id = ?`;
+    return new Promise((resolve, reject) => {
+      db.run(sql, [shortcut.groupId, shortcut.orderNum, shortcut.id], function (err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this.changes);
+        }
+      });
+    });
+  });
+
+  Promise.all(updatePromises)
+    .then(results => {
+      const totalChanges = results.reduce((acc, changes) => acc + changes, 0);
+      res.json({
+        "message": "success",
+        "changes": totalChanges
+      });
+    })
+    .catch(err => {
+      res.status(400).json({"error": err.message});
+    });
+});
 
 // 启动服务器
 app.listen(port, () => {

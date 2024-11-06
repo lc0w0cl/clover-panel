@@ -45,6 +45,7 @@ const fetchShortcuts = async () => {
       groups.value.forEach(group => {
         groupsMap.set(group.id, {
           groupName: group.name,
+          id: group.id,
           order: group.sort,
           shortcuts: []
         });
@@ -55,6 +56,7 @@ const fetchShortcuts = async () => {
         if (groupsMap.has(item.groupId)) {
           groupsMap.get(item.groupId).shortcuts.push({
             id: item.id,
+            groupId: item.groupId,
             title: item.title,
             icon: item.icon,
             internalNetwork: item.internalNetwork,
@@ -230,27 +232,34 @@ const hideContextMenu = () => {
 };
 
 
-const dragCompleted = async (groupId: number) => {
-  const group = shortcutsGroup.value.find(g => g.groupName === groups.value.find(group => group.id === groupId)?.name);
+const dragEnd = async () => {
+  console.log("end-----------------------");
+  console.log("所有快捷方式:", shortcutsGroup);
 
-  if (group) {
-    group.shortcuts.forEach((shortcut: { orderNum: any; }, index: number) => {
-      shortcut.orderNum = index + 1;
-    });
-    console.log('重新编号后的组:', group.shortcuts);
+  // 创建一个数组来存储所有需要更新的快捷方式
+  const updatedShortcuts: any[] = [];
 
-    try {
-      const response = await axios.put(`/api/shortcuts/group/${groupId}`, {
-        shortcuts: group.shortcuts
+  // 遍历每个分组，更新其快捷方式的 orderNum 和 groupId
+  shortcutsGroup.value.forEach((group, groupIndex) => {
+    group.shortcuts.forEach((shortcut, index) => {
+      updatedShortcuts.push({
+        ...shortcut,
+        orderNum: index + 1, // 更新 orderNum
+        groupId: group.id // 更新 groupId
       });
-      console.log('数据库更新成功:', response.data);
-    } catch (error) {
-      console.error('数据库更新失败:', error);
-    }
-  } else {
-    console.log('没有找到匹配的组');
+    });
+  });
+
+  // 将所有更新后的快捷方式发送到服务器进行批量更新
+  try {
+    const response = await axios.put('/api/shortcuts/batch-update', {
+      shortcuts: updatedShortcuts,
+    });
+    console.log('快捷方式批量更新成功:', response.data);
+  } catch (error) {
+    console.error('批量更新快捷方式失败:', error);
   }
-}
+};
 
 
 const triggerFileUpload = () => {
@@ -540,7 +549,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 
           <div class="shortcuts-container">
             <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
-                          @update="dragCompleted(groups[groupIndex].id)">
+                          group="shortcut" @end="dragEnd">
               <ShortcutCard
                   v-for="(item, index) in itemGroup.shortcuts"
                   :key="item.title"
