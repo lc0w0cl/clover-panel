@@ -35,6 +35,7 @@
           </el-button>
         </el-form-item>
       </el-form>
+      <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
     </div>
   </div>
 </template>
@@ -49,6 +50,7 @@ import axios from 'axios';
 const router = useRouter();
 let rainEffect: Rain | null = null;
 const loading = ref(false);
+const errorMessage = ref('');
 
 const loginForm = ref({
   username: '',
@@ -109,6 +111,7 @@ const handleLogin = async () => {
         }
       } catch (error) {
         console.error('Login failed:', error);
+        errorMessage.value = '账号或密码错误，请重试。';
       } finally {
         loading.value = false;
       }
@@ -273,5 +276,9 @@ const handleLogin = async () => {
   opacity: 0;
   animation: fadeIn 1s ease-out forwards;
   z-index: 1;
+}
+
+.error {
+  color: red;
 }
 </style> 
