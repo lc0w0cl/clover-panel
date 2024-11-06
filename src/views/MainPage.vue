@@ -240,7 +240,7 @@ const dragEnd = async () => {
   const updatedShortcuts: any[] = [];
 
   // 遍历每个分组，更新其快捷方式的 orderNum 和 groupId
-  shortcutsGroup.value.forEach((group, groupIndex) => {
+  shortcutsGroup.value.forEach((group:ShortcutGroup) => {
     group.shortcuts.forEach((shortcut, index) => {
       updatedShortcuts.push({
         ...shortcut,
