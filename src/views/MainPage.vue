@@ -701,6 +701,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   padding: 20px;
   box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: auto; /* 确保允许垂直滚动 */
   display: flex;
   flex-direction: column;
   align-items: center;
