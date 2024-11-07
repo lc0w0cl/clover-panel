@@ -251,6 +251,7 @@ const dragEnd = async () => {
     const response = await axios.put('/api/shortcuts/batch-update', {
       shortcuts: updatedShortcuts,
     });
+    console.log(response)
     ElMessage.success('更新成功');
   } catch (error) {
     ElMessage.error('更新失败');
