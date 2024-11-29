@@ -71,7 +71,11 @@ const deleteTodo = async (id: string) => {
   try {
     const response = await axios.delete(`/api/todos/${id}`)
     if (response.data.message === 'success') {
-      await fetchTodos()
+      // 直接从本地列表中移除该项
+      const index = todos.value.findIndex(todo => todo.id === id)
+      if (index !== -1) {
+        todos.value.splice(index, 1)
+      }
     }
   } catch (error) {
     ElMessage.error('删除待办事项失败')
@@ -260,9 +264,36 @@ h2 {
   color: white;
 }
 
+:deep(.el-checkbox__inner) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  width: 16px;
+  height: 16px;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-checkbox__inner::after) {
+  border-color: #ffffff;
+  height: 8px;
+  left: 5px;
+  top: 1px;
+}
+
+:deep(.el-checkbox__input:hover .el-checkbox__inner) {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #409EFF;
-  border-color: #409EFF;
+  background-color: rgba(64, 158, 255, 0.8);
+  border-color: transparent;
+}
+
+:deep(.el-checkbox__input.is-checked:hover .el-checkbox__inner) {
+  background-color: rgba(64, 158, 255, 0.9);
+}
+
+:deep(.el-checkbox__label) {
+  color: white;
 }
 
 .delete-button {
