@@ -58,6 +58,15 @@ function createTables() {
                 }
             });
 
+            // 创建todos表
+            db.run(`CREATE TABLE IF NOT EXISTS todos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                content TEXT NOT NULL,
+                completed BOOLEAN DEFAULT 0,
+                createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updateTime DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
+
             resolve();
         });
     });

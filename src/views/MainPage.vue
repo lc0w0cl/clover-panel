@@ -9,6 +9,7 @@ import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
+import TodoList from '../components/TodoList.vue';
 // 添加网络模式状态
 const isInternalNetwork = ref(false);
 
@@ -632,11 +633,15 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
         @hideMenu="hideContextMenu"
     />
 
+    <!-- 添加TodoList -->
+    <div class="todo-list-container">
+      <TodoList />
+    </div>
   </div>
 
 
 
-  <!-- 添加新建分组的对话框 -->
+  <!-- 添加新建���组的对话框 -->
   <el-dialog
     v-model="addGroupDialogVisible"
     title="新建分组"
@@ -1194,6 +1199,15 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 .edit-icon svg,
 .add-icon svg {
   transition: all 0.3s ease;
+}
+
+.todo-list-container {
+  position: fixed;
+  right: 20px;
+  top: 80px;
+  z-index: 100;
+  max-height: calc(100vh - 120px);
+  margin-bottom: 40px;
 }
 </style>
 

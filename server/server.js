@@ -457,6 +457,84 @@ app.put('/api/shortcuts/batch-update', authenticateToken, (req, res) => {
     });
 });
 
+// 获取所有待办事项
+app.get('/api/todos', authenticateToken, (req, res) => {
+    // 修改SQL查询，先按completed排序（未完成在前），再按创建时间倒序
+    const sql = `SELECT * FROM todos 
+                 ORDER BY completed ASC, 
+                 createTime DESC`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": rows
+        });
+    });
+});
+
+// 创建新的待办事项
+app.post('/api/todos', authenticateToken, (req, res) => {
+    const { content } = req.body;
+    if (!content) {
+        res.status(400).json({"error": "Content is required"});
+        return;
+    }
+
+    const sql = `INSERT INTO todos (content) VALUES (?)`;
+    db.run(sql, [content], function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "data": { id: this.lastID }
+        });
+    });
+});
+
+// 更新待办事项状态
+app.put('/api/todos/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { completed } = req.body;
+    
+    const sql = `UPDATE todos 
+                 SET completed = ?,
+                     updateTime = CURRENT_TIMESTAMP 
+                 WHERE id = ?`;
+    
+    db.run(sql, [completed ? 1 : 0, id], function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "changes": this.changes
+        });
+    });
+});
+
+// 删除待办事项
+app.delete('/api/todos/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const sql = `DELETE FROM todos WHERE id = ?`;
+    
+    db.run(sql, id, function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "changes": this.changes
+        });
+    });
+});
+
 // 启动服务器
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}/`);
