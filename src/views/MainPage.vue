@@ -117,7 +117,7 @@ const rules = reactive<FormRules<RuleForm>>({
   title: [
     {required: true, message: '请输入导航名称', trigger: 'blur'}
   ],
-  internalNetwork: [{required: true, message: '请输入公网链接', trigger: 'blur'}]
+  internalNetwork: [{required: true, message: '�����输入公网链接', trigger: 'blur'}]
 })
 
 // 控制上下文菜单的显示与位置
@@ -558,9 +558,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
           </div>
         </div>
       </div>
-      <div class="todo-list-container">
-        <TodoList />
-      </div>
+      <TodoList />
     </div>
   </div>
 
@@ -635,7 +633,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
       <el-form-item label="分组名称">
         <el-input 
           v-model="newGroupName" 
-          placeholder="请输入分组名称"
+          placeholder="请输入���组名称"
           @keyup.enter="createNewGroup"
         />
       </el-form-item>
@@ -1210,17 +1208,11 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   transition: all 0.3s ease;
 }
 
-.todo-list-container {
-  width: 300px;
-  height: 100%;
-  position: relative;
-}
-
-/* 修改TodoList组件的样式 */
 :deep(.todo-container) {
-  /* height: 100% !important; */
-  /* height: calc(100vh - 140px); */
+  width: 300px;
   margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .network-mode-switch {

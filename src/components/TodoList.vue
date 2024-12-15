@@ -176,30 +176,33 @@ onMounted(() => {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 20px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   color: white;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 h2 {
-  margin: 0 0 20px 0;
+  margin: 20px 20px;
   font-size: 1.2em;
   flex-shrink: 0;
 }
 
 .add-todo {
-  margin-bottom: 20px;
+  margin: 0 20px 20px 20px;
   flex-shrink: 0;
 }
 
 .todo-list {
-  flex-grow: 1;
+  flex: 1;
   overflow-y: auto;
-  padding-right: 4px;
+  margin: 0 5px 0 20px;
+  min-height: 0;
 }
 
 .todo-list::-webkit-scrollbar {
@@ -250,7 +253,7 @@ h2 {
 .empty-text {
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
-  padding: 20px 0;
+  margin: 20px 0;
 }
 
 :deep(.el-input__wrapper) {
