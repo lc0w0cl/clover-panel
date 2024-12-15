@@ -11,14 +11,16 @@ import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
 import TodoList from '../components/TodoList.vue';
 // 添加网络模式状态
-const isInternalNetwork = ref(false);
+const isInternalNetwork = ref(localStorage.getItem('networkMode') === 'internal')
 
 const fileInputRef = ref()
 
 // 切换网络模式的函数
 const toggleNetworkMode = () => {
-  isInternalNetwork.value = !isInternalNetwork.value;
-};
+  // isInternalNetwork.value = !isInternalNetwork.value
+  // 保存到本地存储
+  localStorage.setItem('networkMode', isInternalNetwork.value ? 'internal' : 'external')
+}
 
 const shortcutsGroup = ref<ShortcutGroup[]>([]);
 const groups = ref<GroupItem[]>([]);
@@ -349,6 +351,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('click', handleOutsideClick as EventListener);
   document.removeEventListener('click', handleClickOutside)
+  localStorage.setItem('networkMode', isInternalNetwork.value ? 'internal' : 'external')
 });
 
 // 分组拖拽完成后的处理函数
@@ -670,8 +673,16 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
     </template>
   </el-dialog>
 
+  <!-- 添加网络模式切换按钮 -->
+  <div class="network-mode-switch">
+    <el-switch
+      v-model="isInternalNetwork"
+      active-text="内网"
+      inactive-text="公网"
+      @change="toggleNetworkMode"
+    />
+  </div>
 
-  
 </template>
 
 <style scoped>
@@ -1210,6 +1221,37 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   /* height: 100% !important; */
   /* height: calc(100vh - 140px); */
   margin: 0;
+}
+
+.network-mode-switch {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+:deep(.el-switch__label) {
+  color: white;
+}
+
+:deep(.el-switch.is-checked .el-switch__core) {
+  background-color: rgba(64, 158, 255, 0.8);
+  border-color: transparent;
+}
+
+:deep(.el-switch__core) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: transparent;
+}
+
+:deep(.el-switch:hover:not(.is-disabled) .el-switch__core) {
+  background-color: rgba(64, 158, 255, 0.9);
 }
 </style>
 
