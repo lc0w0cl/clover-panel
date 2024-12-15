@@ -479,169 +479,149 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 </script>
 
 <template>
-  <div v-if="isLoading" class="loading-overlay">
-    <div class="loading-spinner"></div>
-  </div>
-  <div v-else class="main-container">
-    <!-- 网络模式切换按钮 -->
-    <el-button
-      class="network-mode-toggle custom-button"
-      @click="toggleNetworkMode"
-      :class="{ 'internal-network': isInternalNetwork }"
-    >
-      {{ isInternalNetwork ? '内网模式' : '外网模式' }}
-    </el-button>
-    
-    <!-- 添加一个包装器来调整 SearchBar 位置 -->
-    <div class="search-bar-wrapper">
-      <SearchBar ref="searchBarRef"/>
-    </div>
-
-    <!-- 现有的导航展示 -->
-    <div class="navigation-display">
-      <VueDraggable v-model="shortcutsGroup" @end="onGroupDragEnd">
-        <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
-          <div class="group-header">
-            <div class="group-title-container">
-              <span 
-                v-if="editingGroupId !== groups[groupIndex].id" 
-                class="group-title"
-              >
-                {{ itemGroup.groupName }}
-              </span>
-              <el-input
-                v-else
-                v-model="editingGroupName"
-                class="editing-group-name"
-                size="small"
-                @keyup.enter="saveGroupName(groups[groupIndex])"
-                @click.stop
-              />
-              <div class="group-actions">
-                <div 
-                  class="delete-icon"
-                  @click="confirmDeleteGroup(groups[groupIndex], $event)"
+  <div class="main-container">
+    <SearchBar />
+    <div class="content-container">
+      <div class="navigation-display">
+        <VueDraggable v-model="shortcutsGroup" @end="onGroupDragEnd">
+          <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+            <div class="group-header">
+              <div class="group-title-container">
+                <span 
+                  v-if="editingGroupId !== groups[groupIndex].id" 
+                  class="group-title"
                 >
-                  <el-icon><Delete /></el-icon>
-                </div>
-                <div 
-                  class="edit-icon"
-                  @click="editGroup(groups[groupIndex], $event)"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 7L17 4L4 17L3 21L7 20L20 7Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div 
-                  class="add-icon" 
-                  @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                    <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-                  </svg>
+                  {{ itemGroup.groupName }}
+                </span>
+                <el-input
+                  v-else
+                  v-model="editingGroupName"
+                  class="editing-group-name"
+                  size="small"
+                  @keyup.enter="saveGroupName(groups[groupIndex])"
+                  @click.stop
+                />
+                <div class="group-actions">
+                  <div 
+                    class="delete-icon"
+                    @click="confirmDeleteGroup(groups[groupIndex], $event)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </div>
+                  <div 
+                    class="edit-icon"
+                    @click="editGroup(groups[groupIndex], $event)"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 7L17 4L4 17L3 21L7 20L20 7Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div 
+                    class="add-icon" 
+                    @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                      <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="shortcuts-container">
-            <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
-                          group="shortcut" @end="dragEnd">
-              <ShortcutCard
-                  v-for="(item, index) in itemGroup.shortcuts"
-                  :key="item.title"
-                  :title="item.title"
-                  :icon="item.icon"
-                  :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
-                  @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
-              />
-            </VueDraggable>
+            <div class="shortcuts-container">
+              <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
+                            group="shortcut" @end="dragEnd">
+                <ShortcutCard
+                    v-for="(item, index) in itemGroup.shortcuts"
+                    :key="item.title"
+                    :title="item.title"
+                    :icon="item.icon"
+                    :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
+                    @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+                />
+              </VueDraggable>
+            </div>
           </div>
-        </div>
-      </VueDraggable>
-      
-      <!-- 添加新建分组的悬浮按钮 -->
-      <div class="add-group-hover-area">
-        <div class="add-group-button" @click="addGroupDialogVisible = true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+        </VueDraggable>
+        
+        <!-- 添加新建分组的悬浮按钮 -->
+        <div class="add-group-hover-area">
+          <div class="add-group-button" @click="addGroupDialogVisible = true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
         </div>
       </div>
-    </div>
-
-
-    <!--    新增/编辑导航栏-->
-    <el-dialog 
-      v-model="dialogFormVisible" 
-      :title="dialogTitle" 
-      width="600" 
-      @close="resetForm"
-      custom-class="custom-dialog"
-    >
-      <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm" label-position="top">
-        <div class="form-row">
-          <div class="form-left">
-            <el-form-item label="名称" prop="title">
-              <el-input v-model="form.title" autocomplete="off"/>
-            </el-form-item>
-            <el-form-item label="图标">
-              <el-input v-model="form.icon" autocomplete="off">
-                <template #append>
-                  <el-button @click="triggerFileUpload">上传图标</el-button>
-                </template>
-              </el-input>
-              <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none;"/>
-            </el-form-item>
-          </div>
-          <div class="form-right">
-            <el-form-item label=" " class="logo-preview">
-              <img :src="form.icon" v-if="form.icon" alt="Logo预览" class="preview-image">
-              <div v-else class="no-image"></div>
-            </el-form-item>
-          </div>
-        </div>
-        <div class="address-row">
-          <el-form-item label="公网地址" prop="internalNetwork" class="address-item">
-            <el-input v-model="form.internalNetwork" autocomplete="off">
-              <template #append>
-                <el-button @click="fetchLogo">获取图标</el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="内网地址" class="address-item">
-            <el-input v-model="form.privateNetwork" autocomplete="off"/>
-          </el-form-item>
-        </div>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm(ruleFormRef)">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <!--    右击菜单-->
-    <ContextMenu
-        :visible="contextMenuVisible"
-        :position="contextMenuPosition"
-        @edit="editItem"
-        @remove="removeItem"
-        @hideMenu="hideContextMenu"
-    />
-
-    <!-- 添加TodoList -->
-    <div class="todo-list-container">
-      <TodoList />
+      <div class="todo-list-container">
+        <TodoList />
+      </div>
     </div>
   </div>
 
+  <!--    新增/编辑导航栏-->
+  <el-dialog 
+    v-model="dialogFormVisible" 
+    :title="dialogTitle" 
+    width="600" 
+    @close="resetForm"
+    custom-class="custom-dialog"
+  >
+    <el-form :model="form" ref="ruleFormRef" :rules="rules" class="demo-ruleForm" label-position="top">
+      <div class="form-row">
+        <div class="form-left">
+          <el-form-item label="名称" prop="title">
+            <el-input v-model="form.title" autocomplete="off"/>
+          </el-form-item>
+          <el-form-item label="图标">
+            <el-input v-model="form.icon" autocomplete="off">
+              <template #append>
+                <el-button @click="triggerFileUpload">上传图标</el-button>
+              </template>
+            </el-input>
+            <input type="file" ref="fileInputRef" @change="handleFileChange" style="display: none;"/>
+          </el-form-item>
+        </div>
+        <div class="form-right">
+          <el-form-item label=" " class="logo-preview">
+            <img :src="form.icon" v-if="form.icon" alt="Logo预览" class="preview-image">
+            <div v-else class="no-image"></div>
+          </el-form-item>
+        </div>
+      </div>
+      <div class="address-row">
+        <el-form-item label="公网地址" prop="internalNetwork" class="address-item">
+          <el-input v-model="form.internalNetwork" autocomplete="off">
+            <template #append>
+              <el-button @click="fetchLogo">获取图标</el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="内网地址" class="address-item">
+          <el-input v-model="form.privateNetwork" autocomplete="off"/>
+        </el-form-item>
+      </div>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm(ruleFormRef)">保存</el-button>
+      </div>
+    </template>
+  </el-dialog>
 
+  <!--    右击菜单-->
+  <ContextMenu
+      :visible="contextMenuVisible"
+      :position="contextMenuPosition"
+      @edit="editItem"
+      @remove="removeItem"
+      @hideMenu="hideContextMenu"
+  />
 
-  <!-- 添加新建���组的对话框 -->
+  <!-- 添加新建组的对话框 -->
   <el-dialog
     v-model="addGroupDialogVisible"
     title="新建分组"
@@ -707,20 +687,22 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   padding: 20px;
   box-sizing: border-box;
   overflow-x: hidden;
-  overflow-y: auto; /* 确保允许垂直滚动 */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.search-bar-wrapper {
-  margin-top: 60px; /* 调整这个值来改变搜索框距离顶部的距离 */
+.content-container {
+  display: flex;
+  gap: 20px;
   width: 100%;
-  max-width: 600px; /* 可以根据需要调整最大宽度 */
+  max-width: 1600px;
+  margin-top: 30px;
+  height: calc(100vh - 140px); /* 减去顶部搜索栏和padding的高度 */
 }
 
 .navigation-display {
-  margin-top: 30px; /* 给导显示区域添加一些上边距 */
+  flex: 1;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -728,9 +710,25 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   padding: 40px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  width: 100%;
-  max-width: 1200px; /* 或者您认为合适的最大宽度 */
-  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.navigation-display::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navigation-display::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.navigation-display::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.navigation-display::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .shortcuts-container {
@@ -1202,12 +1200,16 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 }
 
 .todo-list-container {
-  position: fixed;
-  right: 20px;
-  top: 80px;
-  z-index: 100;
-  max-height: calc(100vh - 120px);
-  margin-bottom: 40px;
+  width: 300px;
+  height: 100%;
+  position: relative;
+}
+
+/* 修改TodoList组件的样式 */
+:deep(.todo-container) {
+  /* height: 100% !important; */
+  /* height: calc(100vh - 140px); */
+  margin: 0;
 }
 </style>
 
