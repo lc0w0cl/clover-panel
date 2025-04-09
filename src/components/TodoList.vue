@@ -12,6 +12,7 @@ interface Todo {
   updateTime: string
   color?: string
   rotation?: number
+  isEditing?: boolean
 }
 
 // 添加后端返回的todo数据接口
@@ -27,6 +28,7 @@ const todos = ref<Todo[]>([])
 const newTodo = ref('')
 const isLoading = ref(false)
 const showAddForm = ref(false)
+const editingContent = ref('')
 
 // 贴纸颜色组
 const noteColors = [
@@ -105,8 +107,55 @@ const deleteTodo = async (id: string) => {
   }
 }
 
+// 开始编辑待办事项
+const startEditing = (todo: Todo) => {
+  // 只允许编辑未完成的待办事项
+  if (todo.completed) return
+  
+  // 先清除其他正在编辑的项
+  todos.value.forEach(t => {
+    if (t.id !== todo.id) {
+      t.isEditing = false
+    }
+  })
+  
+  // 设置当前项为编辑状态
+  todo.isEditing = true
+  editingContent.value = todo.content
+}
+
+// 保存编辑的待办事项
+const saveEdit = async (todo: Todo) => {
+  if (!editingContent.value.trim()) {
+    todo.isEditing = false
+    return
+  }
+  
+  try {
+    const response = await axios.put(`/api/todos/${todo.id}`, {
+      content: editingContent.value
+    })
+    
+    if (response.data.message === 'success') {
+      todo.content = editingContent.value
+      todo.updateTime = new Date().toISOString()
+      todo.isEditing = false
+    }
+  } catch (error) {
+    ElMessage.error('更新待办事项失败')
+  }
+}
+
+// 取消编辑
+const cancelEdit = (todo: Todo) => {
+  todo.isEditing = false
+}
+
 // 更新待办事项状态
 const toggleTodo = async (todo: Todo) => {
+  // 如果正在编辑,不允许切换状态
+  if (todo.isEditing) return
+  
   try {
     const response = await axios.put(`/api/todos/${todo.id}`, {
       completed: todo.completed
@@ -203,15 +252,39 @@ onMounted(() => {
               v-model="todo.completed"
               @change="toggleTodo(todo)"
             />
-            <span class="todo-text">{{ todo.content }}</span>
+            <template v-if="todo.isEditing">
+              <textarea 
+                v-model="editingContent"
+                class="edit-textarea"
+                autofocus
+              ></textarea>
+            </template>
+            <span v-else class="todo-text">{{ todo.content }}</span>
           </div>
           <div class="note-footer">
-            <el-button
-              class="delete-button"
-              @click="deleteTodo(todo.id)"
-            >
-              <el-icon><Delete /></el-icon>
-            </el-button>
+            <template v-if="todo.isEditing">
+              <div class="edit-actions">
+                <el-button class="save-button" @click="saveEdit(todo)">保存</el-button>
+                <el-button @click="cancelEdit(todo)">取消</el-button>
+              </div>
+            </template>
+            <template v-else>
+              <el-button
+                v-if="!todo.completed"
+                class="edit-button"
+                @click="startEditing(todo)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 7L17 4L4 17L3 21L7 20L20 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </el-button>
+              <el-button
+                class="delete-button"
+                @click="deleteTodo(todo.id)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </template>
           </div>
         </div>
       </div>
@@ -359,6 +432,7 @@ h2 {
 .note-footer {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: auto;
 }
 
@@ -462,5 +536,40 @@ h2 {
 
 :deep(.el-checkbox__inner::after) {
   border-color: #fff;
+}
+
+.edit-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 80px;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  padding: 0;
+  margin-left: 10px;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.edit-button {
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: #888;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.edit-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 </style> 
