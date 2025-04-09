@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import MainPage from '../views/MainPage.vue';
 import { isAuthenticated } from '../utils/auth';
 import RainLoginPage from '../views/RainLoginPage.vue';
+import MainPage from '../views/MainPage.vue';
+import NavigationPanel from '../views/NavigationPanel.vue';
+import TodoPage from '../views/TodoPage.vue';
 
 const routes = [
   {
@@ -20,7 +22,22 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: MainPage,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
+    redirect: { name: 'Navigation' },
+    children: [
+      {
+        path: 'navigation',
+        name: 'Navigation',
+        component: NavigationPanel,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'todo',
+        name: 'Todo',
+        component: TodoPage,
+        meta: { requiresAuth: true }
+      }
+    ]
   }
 ];
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, Edit, Plus } from '@element-plus/icons-vue'
 
 interface Todo {
   id: string
@@ -10,6 +10,8 @@ interface Todo {
   completed: boolean
   createTime: string
   updateTime: string
+  color?: string
+  rotation?: number
 }
 
 // 添加后端返回的todo数据接口
@@ -24,6 +26,22 @@ interface TodoResponse {
 const todos = ref<Todo[]>([])
 const newTodo = ref('')
 const isLoading = ref(false)
+const showAddForm = ref(false)
+
+// 贴纸颜色组
+const noteColors = [
+  '#ffcc80', // 橙色
+  '#fff59d', // 黄色
+  '#a5d6a7', // 绿色
+  '#90caf9', // 蓝色
+  '#f48fb1', // 粉色
+  '#ce93d8', // 紫色
+  '#b0bec5'  // 灰色
+]
+
+// 为每个待办事项分配一个随机颜色和旋转角度
+const getRandomColor = () => noteColors[Math.floor(Math.random() * noteColors.length)]
+const getRandomRotation = () => Math.random() * 6 - 3 // -3到3度之间的随机角度
 
 // 获取所有待办事项
 const fetchTodos = async () => {
@@ -33,7 +51,9 @@ const fetchTodos = async () => {
     todos.value = response.data.data.map((todo: TodoResponse) => ({
       ...todo,
       id: todo.id.toString(), // 转换为字符串以配Todo接口
-      completed: Boolean(todo.completed)
+      completed: Boolean(todo.completed),
+      color: getRandomColor(),
+      rotation: getRandomRotation()
     }))
   } catch (error) {
     ElMessage.error('获取待办事项失败')
@@ -56,10 +76,13 @@ const addTodo = async () => {
         content: newTodo.value,
         completed: false,
         createTime: new Date().toISOString(),
-        updateTime: new Date().toISOString()
+        updateTime: new Date().toISOString(),
+        color: getRandomColor(),
+        rotation: getRandomRotation()
       }
       todos.value.unshift(newTodoItem)
       newTodo.value = ''
+      showAddForm.value = false
     }
   } catch (error) {
     ElMessage.error('添加待办事项失败')
@@ -129,42 +152,68 @@ onMounted(() => {
 
 <template>
   <div class="todo-container">
-    <h2>待办事项</h2>
-    
-    <div class="add-todo">
-      <el-input
-        v-model="newTodo"
-        placeholder="添加新的待办事项"
-        @keyup.enter="addTodo"
+    <div class="todo-header">
+      <h2>我的待办</h2>
+      <el-button 
+        v-if="!showAddForm" 
+        class="add-note-button" 
+        @click="showAddForm = true"
       >
-        <template #append>
-          <el-button @click="addTodo">添加</el-button>
-        </template>
-      </el-input>
+        <el-icon><Plus /></el-icon>添加事项
+      </el-button>
+    </div>
+    
+    <div v-if="showAddForm" class="add-note-form">
+      <div class="sticky-note new-note">
+        <textarea 
+          v-model="newTodo" 
+          placeholder="写点什么..." 
+          @keyup.enter="addTodo"
+          ref="newNoteInput"
+          autofocus
+        ></textarea>
+        <div class="note-actions">
+          <el-button class="save-button" @click="addTodo">保存</el-button>
+          <el-button @click="showAddForm = false">取消</el-button>
+        </div>
+      </div>
     </div>
 
     <div class="todo-list" v-loading="isLoading">
-      <div v-if="todos.length === 0" class="empty-text">
-        暂无待办事项
+      <div v-if="todos.length === 0 && !showAddForm" class="empty-notes">
+        <p>暂无待办事项</p>
+        <el-button class="add-first-note" @click="showAddForm = true">
+          <el-icon><Plus /></el-icon>添加第一个事项
+        </el-button>
       </div>
       
-      <div
-        v-for="todo in todos"
-        :key="todo.id"
-        class="todo-item"
-        :class="{ 'completed': todo.completed }"
-      >
-        <el-checkbox
-          v-model="todo.completed"
-          @change="toggleTodo(todo)"
-        />
-        <span class="todo-content">{{ todo.content }}</span>
-        <el-button
-          type="danger"
-          :icon="Delete"
-          class="delete-button"
-          @click="deleteTodo(todo.id)"
-        />
+      <div class="sticky-notes-container">
+        <div
+          v-for="todo in todos"
+          :key="todo.id"
+          class="sticky-note"
+          :class="{ 'completed': todo.completed }"
+          :style="{
+            backgroundColor: todo.color,
+            transform: `rotate(${todo.rotation}deg)`
+          }"
+        >
+          <div class="note-content">
+            <el-checkbox
+              v-model="todo.completed"
+              @change="toggleTodo(todo)"
+            />
+            <span class="todo-text">{{ todo.content }}</span>
+          </div>
+          <div class="note-footer">
+            <el-button
+              class="delete-button"
+              @click="deleteTodo(todo.id)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -172,37 +221,53 @@ onMounted(() => {
 
 <style scoped>
 .todo-container {
-  background: rgba(255, 255, 255, 0.1);
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  background: rgba(244, 244, 244, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  color: white;
+  color: #333;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-h2 {
-  margin: 20px 20px;
-  font-size: 1.2em;
-  flex-shrink: 0;
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-.add-todo {
-  margin: 0 20px 20px 20px;
-  flex-shrink: 0;
+h2 {
+  margin: 0;
+  font-size: 1.4em;
+  color: white;
+  font-weight: 600;
+}
+
+.add-note-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  border-radius: 20px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+}
+
+.add-note-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .todo-list {
   flex: 1;
   overflow-y: auto;
-  margin: 0 5px 0 20px;
-  min-height: 0;
+  padding-right: 10px;
 }
 
 .todo-list::-webkit-scrollbar {
@@ -223,105 +288,178 @@ h2 {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.todo-item {
+.sticky-notes-container {
   display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  gap: 20px;
+  align-content: flex-start;
+}
+
+.sticky-note {
+  width: calc(33.333% - 20px);
+  min-width: 220px;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+  position: relative;
+  margin-bottom: 10px;
 }
 
-.todo-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+@media (max-width: 1200px) {
+  .sticky-note {
+    width: calc(50% - 20px);
+  }
 }
 
-.todo-content {
-  flex: 1;
-  margin: 0 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@media (max-width: 768px) {
+  .sticky-note {
+    width: 100%;
+  }
 }
 
-.completed .todo-content {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.empty-text {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 20px 0;
-}
-
-:deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-:deep(.el-input__inner) {
-  color: white;
-}
-
-:deep(.el-checkbox__inner) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  width: 16px;
-  height: 16px;
-  transition: all 0.3s ease;
-}
-
-:deep(.el-checkbox__inner::after) {
-  border-color: #ffffff;
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  width: 40px;
   height: 8px;
-  left: 5px;
-  top: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  top: -4px;
+  left: calc(50% - 20px);
+  border-radius: 4px;
 }
 
-:deep(.el-checkbox__input:hover .el-checkbox__inner) {
-  border-color: rgba(255, 255, 255, 0.5);
+.sticky-note:hover {
+  transform: translateY(-5px) rotate(0) !important;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 
-:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: rgba(64, 158, 255, 0.8);
-  border-color: transparent;
+.note-content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
 }
 
-:deep(.el-checkbox__input.is-checked:hover .el-checkbox__inner) {
-  background-color: rgba(64, 158, 255, 0.9);
+.todo-text {
+  margin-left: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-:deep(.el-checkbox__label) {
-  color: white;
+.note-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.completed {
+  opacity: 0.7;
+}
+
+.completed .todo-text {
+  text-decoration: line-through;
+  color: #888;
 }
 
 .delete-button {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: #888;
   transition: all 0.3s ease;
-  background-color: rgba(255, 77, 79, 0.1);
-  border-color: transparent;
+  border-radius: 4px;
 }
 
 .delete-button:hover {
-  background-color: rgba(255, 77, 79, 0.2);
-  transform: scale(1.05);
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 
-.delete-button :deep(.el-icon) {
-  font-size: 14px;
-  color: rgba(255, 77, 79, 0.9);
+.empty-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
 }
 
-.delete-button:hover :deep(.el-icon) {
-  color: #ff4d4f;
+.empty-notes p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.add-first-note {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+}
+
+.add-first-note:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.add-note-form {
+  margin-bottom: 30px;
+}
+
+.new-note {
+  width: 100%;
+  background-color: #fff59d;
+  margin-bottom: 30px;
+}
+
+.new-note textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100px;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.save-button {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #333;
+  border: none;
+}
+
+.save-button:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+:deep(.el-checkbox__inner) {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #409EFF;
+}
+
+:deep(.el-checkbox__inner::after) {
+  border-color: #fff;
 }
 </style> 

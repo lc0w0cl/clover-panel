@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import ShortcutCard from './ShortcutCard.vue';
-import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue"; // 合并导入
-import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
-import ContextMenu from "./ContextMenu.vue";
+import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue";
 import {ShortcutGroup} from '../model/shortcutGroup';
-import axios from 'axios'; // 引入axios
+import axios from 'axios';
 import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
-import { Delete, Warning, Menu, List } from '@element-plus/icons-vue'
-import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
-import TodoList from '../components/TodoList.vue';
+import { Delete, Warning } from '@element-plus/icons-vue'
+import { GroupItem } from '@/model/groupItem';
+
 // 添加网络模式状态
 const isInternalNetwork = ref(localStorage.getItem('networkMode') === 'internal')
 
@@ -92,7 +90,7 @@ const dialogTitle = computed(() => (isEdit.value ? '编辑导航' : '新建导�
 let upload_new_logo = ref(false);
 
 interface RuleForm {
-  id: string; // 添加 id 属性
+  id: string;
   title: string
   internalNetwork: string
   privateNetwork: string
@@ -108,7 +106,7 @@ const form = reactive<RuleForm>({
   internalNetwork: '',
   privateNetwork: '',
   icon: '',
-  orderNum: 99 // 确保包含 orderNum 属性
+  orderNum: 99
 })
 
 const rules = reactive<FormRules<RuleForm>>({
@@ -123,11 +121,10 @@ const contextMenuVisible = ref(false);
 const contextMenuPosition = ref({x: 0, y: 0});
 const selectedItem = ref(null);
 
-
 const saveShortcut = async () => {
   const shortcutData = {
     groupId: groups.value[selectedGroupShortcutIndex.value].id,
-    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.length + 1, // 确保 orderNum 是最后一个
+    orderNum: shortcutsGroup.value[selectedGroupShortcutIndex.value].shortcuts.length + 1,
     title: form.title,
     icon: form.icon,
     internalNetwork: form.internalNetwork,
@@ -156,7 +153,6 @@ const saveShortcut = async () => {
 
 // 重置表单内容
 const resetForm = (save_success:boolean) => {
-
   if(upload_new_logo.value && !save_success){
     //删除文件
     deleteLogo()
@@ -202,7 +198,6 @@ const showContextMenu = (event: MouseEvent, item: any, groupIndex: number, index
   selectedGroupShortcutIndex.value = groupIndex
 };
 
-
 // ContextMenu右击事件监听回调
 const editItem = () => {
   // 在这里添加编辑逻辑，比如打开编辑弹窗
@@ -231,7 +226,6 @@ const hideContextMenu = () => {
   contextMenuVisible.value = false;
 };
 
-
 const dragEnd = async () => {
   // 创建一个数组来存储所有需要更新的快捷方式
   const updatedShortcuts: any[] = [];
@@ -259,14 +253,12 @@ const dragEnd = async () => {
   }
 };
 
-
 const triggerFileUpload = () => {
   // 触文选择
   if (fileInputRef) {
     fileInputRef.value.click();
   }
 };
-
 
 const handleFileChange = async (event: any) => {
   const file = event.target.files[0];
@@ -290,9 +282,7 @@ const handleFileChange = async (event: any) => {
       console.error('文件上传失败:', error);
     }
   }
-
 };
-
 
 const fetchLogo = async () => {
   if (form.internalNetwork == undefined || form.internalNetwork == '') {
@@ -313,15 +303,11 @@ const deleteLogo = async () => {
         params: { filename: form.icon } // 换为实际的文件路径
       });
       console.log('件删功:', response.data);
-      // ElMessage.success('文件删除成功');
     } catch (error) {
       console.error('删除文件失败:', error);
-      // ElMessage.error('删除文件失败');
     }
   }
 };
-
-const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
 // 添加 isLoading 的定义
 const isLoading = ref(true);
@@ -338,11 +324,6 @@ onMounted(async () => {
     isLoading.value = false;
   }
   window.addEventListener('click', handleOutsideClick as EventListener);
-  
-  // 在下一个 tick 中聚焦搜索框
-  setTimeout(() => {
-    searchBarRef.value?.focus();
-  }, 0);
   document.addEventListener('click', handleClickOutside)
 });
 
@@ -476,39 +457,79 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   deletingGroupId.value = group.id
   deleteGroupVisible.value = true
 }
-
-// 添加当前选中的导航选项
-const activeMenu = ref('navigation');  // 默认显示导航面板
-
 </script>
 
 <template>
-  <div class="main-container">
-    <SearchBar />
-    <div class="content-container">
-      <!-- 侧边菜单栏 -->
-      <div class="side-menu">
-        <router-link 
-          to="/home/navigation" 
-          class="menu-item"
-          active-class="active"
-        >
-          <el-icon><Menu /></el-icon>
-          <span>导航面板</span>
-        </router-link>
-        <router-link 
-          to="/home/todo" 
-          class="menu-item"
-          active-class="active"
-        >
-          <el-icon><List /></el-icon>
-          <span>待办事项</span>
-        </router-link>
+  <div class="navigation-display">
+    <VueDraggable v-model="shortcutsGroup" @end="onGroupDragEnd">
+      <div v-for="(itemGroup, groupIndex) in shortcutsGroup" :key="itemGroup.groupName">
+        <div class="group-header">
+          <div class="group-title-container">
+            <span 
+              v-if="editingGroupId !== groups[groupIndex].id" 
+              class="group-title"
+            >
+              {{ itemGroup.groupName }}
+            </span>
+            <el-input
+              v-else
+              v-model="editingGroupName"
+              class="editing-group-name"
+              size="small"
+              @keyup.enter="saveGroupName(groups[groupIndex])"
+              @click.stop
+            />
+            <div class="group-actions">
+              <div 
+                class="delete-icon"
+                @click="confirmDeleteGroup(groups[groupIndex], $event)"
+              >
+                <el-icon><Delete /></el-icon>
+              </div>
+              <div 
+                class="edit-icon"
+                @click="editGroup(groups[groupIndex], $event)"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 7L17 4L4 17L3 21L7 20L20 7Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div 
+                class="add-icon" 
+                @click="dialogFormVisible=true;selectedGroupShortcutIndex=groupIndex;isEdit=false"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 2V14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                  <path d="M2 8H14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="shortcuts-container">
+          <VueDraggable ref="el" v-model="itemGroup.shortcuts" class="drag"
+                        group="shortcut" @end="dragEnd">
+            <ShortcutCard
+                v-for="(item, index) in itemGroup.shortcuts"
+                :key="item.title"
+                :title="item.title"
+                :icon="item.icon"
+                :link="isInternalNetwork ? item.privateNetwork : item.internalNetwork"
+                @contextmenu.prevent="showContextMenu($event, item,groupIndex,index)"
+            />
+          </VueDraggable>
+        </div>
       </div>
-      
-      <!-- 路由视图，显示子路由内容 -->
-      <div class="main-content">
-        <router-view></router-view>
+    </VueDraggable>
+    
+    <!-- 添加新建分组的悬浮按钮 -->
+    <div class="add-group-hover-area">
+      <div class="add-group-button" @click="addGroupDialogVisible = true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
       </div>
     </div>
   </div>
@@ -621,157 +642,435 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
       </div>
     </template>
   </el-dialog>
-
-  <!-- 添加网络模式切换按钮 -->
-  <div class="network-mode-switch">
-    <el-switch
-      v-model="isInternalNetwork"
-      active-text="内网"
-      inactive-text="公网"
-      @change="toggleNetworkMode"
-    />
-  </div>
-
 </template>
 
 <style scoped>
-.main-container {
-  min-height: 100vh;
-  min-width: 100vw;
-  background-image: url('/src/assets/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  animation: fadeIn 1s ease-in-out;
-  padding: 20px;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.content-container {
-  display: flex;
-  gap: 20px;
-  width: 100%;
-  max-width: 1600px;
-  margin-top: 30px;
-  height: calc(100vh - 140px); /* 减去顶部搜索栏和padding的高度 */
-}
-
-/* 侧边菜单样式 */
-.side-menu {
-  width: 200px;
+.navigation-display {
+  flex: 1;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 20px 0;
+  padding: 40px;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
 }
 
-.menu-item {
+.navigation-display::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navigation-display::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.navigation-display::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.navigation-display::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.shortcuts-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.group-header {
+  margin-bottom: 15px;
+}
+
+.group-title-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.group-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ffffff;
+  margin-right: 10px; /* 为 "+" 号留出空间 */
+}
+
+.add-icon {
+  cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 15px 20px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+.group-title-container:hover .add-icon {
+  opacity: 1;
 }
 
-.menu-item.active {
-  background: rgba(255, 255, 255, 0.2);
-  border-left: 3px solid white;
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
 }
 
-.menu-item .el-icon {
-  margin-right: 10px;
-  font-size: 18px;
-}
-
-/* 主内容区样式 */
-.main-content {
-  flex: 1;
-  display: flex;
+.custom-dialog {
+  border-radius: 20px;
   overflow: hidden;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+:deep(.el-dialog) {
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-.network-mode-switch {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0.1);
+:deep(.el-dialog__header) {
+  padding: 15px;
+}
+
+:deep(.el-dialog__body) {
+  background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 8px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-:deep(.el-switch__label) {
+:deep(.el-dialog__footer) {
+  background-color: rgba(245, 247, 250, 0.8);
+}
+
+.address-row {
+  display: flex;
+  gap: 20px;
+}
+
+.address-item {
+  flex: 1;
+}
+
+:deep(.el-form-item__content) {
+  width: 100%;
+}
+
+:deep(.el-input-group__append) {
+  background-color: #409EFF;
+  border-color: #409EFF;
   color: white;
 }
 
-:deep(.el-switch.is-checked .el-switch__core) {
-  background-color: rgba(64, 158, 255, 0.8);
-  border-color: transparent;
+:deep(.el-input-group__append .el-button) {
+  color: white;
+  border: none;
+  background-color: transparent;
 }
 
-:deep(.el-switch__core) {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: transparent;
+:deep(.el-input-group__append .el-button:hover) {
+  color: #ecf5ff;
 }
 
-:deep(.el-switch:hover:not(.is-disabled) .el-switch__core) {
-  background-color: rgba(64, 158, 255, 0.9);
+:deep(.el-dialog__title) {
+  font-size: 16px;
 }
-</style>
 
+:deep(.el-form-item__label) {
+  font-weight: normal;
+}
 
+:deep(.el-input__inner) {
+  font-size: 14px;
+}
 
+:deep(.el-button) {
+  font-size: 14px;
+}
 
+.dialog-footer {
+  text-align: right;
+}
 
+.dialog-footer .el-button + .el-button {
+  margin-left: 10px;
+}
 
+.form-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
 
+.form-left {
+  flex: 1;
+}
 
+.form-right {
+  width: 120px;
+}
 
+.logo-preview {
+  height: 100%;
+}
 
+.logo-preview :deep(.el-form-item__label) {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
 
+.preview-image {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
 
+.no-image {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #dcdfe6;
+  border-radius: 15px;
+  color: #909399;
+  font-size: 14px;
+}
 
+.drag{
+  display: flex;
+  flex-wrap: wrap;
+}
 
+.group-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-left: 4px;
+  position: relative;
+}
 
+.group-title-container:hover .group-actions {
+  opacity: 1;
+}
 
+.edit-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.edit-icon:hover svg path {
+  stroke: #e6e6e6;
+}
 
+.edit-icon:hover {
+  transform: scale(1.1);
+}
 
+.edit-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
 
+.edit-icon svg {
+  transition: transform 0.3s ease;
+}
 
+.add-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
+}
 
+.add-icon:hover {
+  transform: scale(1.1);
+}
 
+.add-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
 
+.add-icon svg {
+  transition: transform 0.3s ease;
+}
 
+.delete-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ff4d4f;
+}
 
+.delete-icon:hover {
+  transform: scale(1.1);
+}
 
+.delete-icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
 
+.delete-icon svg {
+  transition: transform 0.3s ease;
+}
 
+.delete-confirm-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
 
+.warning-icon {
+  font-size: 24px;
+}
 
+.delete-confirm-content p {
+  margin: 0;
+  color: #606266;
+  font-size: 14px;
+}
 
+.editing-group-name {
+  width: 120px;
+  margin-right: 4px;
+}
+
+.editing-group-name :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0 8px;
+}
+
+.editing-group-name :deep(.el-input__inner) {
+  color: white;
+  height: 24px;
+  line-height: 24px;
+  font-size: 1.2em;
+}
+
+.group-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ffffff;
+  margin-right: 4px;
+  min-width: 60px;
+  display: inline-block;
+}
+
+.add-group-hover-area {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  position: relative;
+}
+
+.add-group-button {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-group-hover-area:hover .add-group-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.add-group-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.add-group-button svg {
+  transition: transform 0.3s ease;
+}
+
+.add-group-button:hover svg {
+  transform: rotate(180deg);
+}
+
+.delete-icon:hover .el-icon,
+.edit-icon:hover svg,
+.add-icon:hover svg {
+  transform: scale(1.1) translateX(0) !important; /* 只保留缩放效果 */
+}
+
+.edit-icon svg path,
+.add-icon svg path {
+  stroke: white;
+  transition: stroke 0.2s ease;
+}
+
+.edit-icon:hover svg path,
+.add-icon:hover svg path {
+  stroke: #e6e6e6;
+}
+
+.group-title-container:hover .delete-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0s;
+}
+
+.group-title-container:hover .edit-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.05s;
+}
+
+.group-title-container:hover .add-icon {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.1s;
+}
+
+.delete-icon .el-icon,
+.edit-icon svg,
+.add-icon svg {
+  transition: all 0.3s ease;
+}
+</style> 
