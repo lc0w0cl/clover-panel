@@ -499,14 +499,38 @@ app.post('/api/todos', authenticateToken, (req, res) => {
 // 更新待办事项状态
 app.put('/api/todos/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
-    const { completed } = req.body;
+    const { completed, content } = req.body;
     
-    const sql = `UPDATE todos 
-                 SET completed = ?,
-                     updateTime = CURRENT_TIMESTAMP 
-                 WHERE id = ?`;
+    let sql, params;
     
-    db.run(sql, [completed ? 1 : 0, id], function(err) {
+    // 根据请求参数决定更新内容或状态或两者都更新
+    if (content !== undefined && completed !== undefined) {
+        // 同时更新内容和状态
+        sql = `UPDATE todos 
+               SET content = ?,
+                   completed = ?,
+                   updateTime = CURRENT_TIMESTAMP 
+               WHERE id = ?`;
+        params = [content, completed ? 1 : 0, id];
+    } else if (content !== undefined) {
+        // 只更新内容
+        sql = `UPDATE todos 
+               SET content = ?,
+                   updateTime = CURRENT_TIMESTAMP 
+               WHERE id = ?`;
+        params = [content, id];
+    } else if (completed !== undefined) {
+        // 只更新状态
+        sql = `UPDATE todos 
+               SET completed = ?,
+                   updateTime = CURRENT_TIMESTAMP 
+               WHERE id = ?`;
+        params = [completed ? 1 : 0, id];
+    } else {
+        return res.status(400).json({"error": "No update parameters provided"});
+    }
+    
+    db.run(sql, params, function(err) {
         if (err) {
             res.status(400).json({"error": err.message});
             return;
