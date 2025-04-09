@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import ShortcutCard from './ShortcutCard.vue';
+
 import {onBeforeUnmount, onMounted, reactive, ref, computed} from "vue"; // 合并导入
 import SearchBar from './SearchBar.vue'; // 引入 SearchBar 组件
 import ContextMenu from "./ContextMenu.vue";
 import {ShortcutGroup} from '../model/shortcutGroup';
 import axios from 'axios'; // 引入axios
-import {VueDraggable} from 'vue-draggable-plus'
+
 import type {FormInstance, FormRules} from 'element-plus'
-import { Delete, Warning, Menu, List } from '@element-plus/icons-vue'
+import { Warning, Menu, List } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';  // 确保导入 GroupItem
-import TodoList from '../components/TodoList.vue';
+
 // 添加网络模式状态
 const isInternalNetwork = ref(localStorage.getItem('networkMode') === 'internal')
 
@@ -193,14 +193,6 @@ const handleOutsideClick = (event: { target: Node | null; }) => {
   }
 };
 
-// 打开右击菜单
-const showContextMenu = (event: MouseEvent, item: any, groupIndex: number, index: number) => {
-  contextMenuVisible.value = true;
-  contextMenuPosition.value = {x: event.clientX, y: event.clientY};
-  selectedItem.value = item;
-  selectedShortcutIndex.value = index;
-  selectedGroupShortcutIndex.value = groupIndex
-};
 
 
 // ContextMenu右击事件监听回调
@@ -229,34 +221,6 @@ const removeItem = async () => {
 
 const hideContextMenu = () => {
   contextMenuVisible.value = false;
-};
-
-
-const dragEnd = async () => {
-  // 创建一个数组来存储所有需要更新的快捷方式
-  const updatedShortcuts: any[] = [];
-
-  // 遍历每个分组，更新其快捷方式的 orderNum 和 groupId
-  shortcutsGroup.value.forEach((group:ShortcutGroup) => {
-    group.shortcuts.forEach((shortcut, index) => {
-      updatedShortcuts.push({
-        ...shortcut,
-        orderNum: index + 1, // 更新 orderNum
-        groupId: group.id // 更新 groupId
-      });
-    });
-  });
-
-  // 将所有更新后的快捷方式发送到服务器进行批量更新
-  try {
-    const response = await axios.put('/api/shortcuts/batch-update', {
-      shortcuts: updatedShortcuts,
-    });
-    console.log(response)
-    ElMessage.success('更新成功');
-  } catch (error) {
-    ElMessage.error('更新失败');
-  }
 };
 
 
@@ -352,35 +316,11 @@ onBeforeUnmount(() => {
   localStorage.setItem('networkMode', isInternalNetwork.value ? 'internal' : 'external')
 });
 
-// 分组拖拽完成后的处理函数
-const onGroupDragEnd = async () => {
-  // 更新分组顺序
-  shortcutsGroup.value.forEach((group, index) => {
-    group.order = index + 1;
-  });
-
-  try {
-    const response = await axios.put('/api/groups/order', {
-      groups: shortcutsGroup.value.map(group => ({
-        id: groups.value.find(g => g.name === group.groupName)?.id,
-        order: group.order
-      }))
-    });
-    console.log('分组顺序更新成功:', response.data);
-  } catch (error) {
-    console.error('分组顺序更新失败:', error);
-  }
-};
 
 const editingGroupId = ref<number | null>(null)
 const editingGroupName = ref('')
 
 // 修改编辑分组的方法
-const editGroup = (group: GroupItem, event: Event) => {
-  event.stopPropagation() // 阻止事件冒泡
-  editingGroupId.value = group.id
-  editingGroupName.value = group.name
-}
 
 // 添加保存分组名称的方法
 const saveGroupName = async (group: GroupItem) => {
@@ -470,15 +410,7 @@ const deleteGroup = async (groupId: number) => {
   }
 }
 
-// 添加确认删的方法
-const confirmDeleteGroup = (group: GroupItem, event: Event) => {
-  event.stopPropagation()
-  deletingGroupId.value = group.id
-  deleteGroupVisible.value = true
-}
 
-// 添加当前选中的导航选项
-const activeMenu = ref('navigation');  // 默认显示导航面板
 
 </script>
 

@@ -44,7 +44,7 @@ const remove = () => {
 
 <style scoped>
 .context-menu {
-  position: absolute;
+  position: fixed;
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 5px;

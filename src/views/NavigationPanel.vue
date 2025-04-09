@@ -7,16 +7,13 @@ import {VueDraggable} from 'vue-draggable-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import { Delete, Warning } from '@element-plus/icons-vue'
 import { GroupItem } from '@/model/groupItem';
+import ContextMenu from './ContextMenu.vue';
 
 // 添加网络模式状态
 const isInternalNetwork = ref(localStorage.getItem('networkMode') === 'internal')
 
 const fileInputRef = ref()
 
-// 切换网络模式的函数
-const toggleNetworkMode = () => {
-  localStorage.setItem('networkMode', isInternalNetwork.value ? 'internal' : 'external')
-}
 
 const shortcutsGroup = ref<ShortcutGroup[]>([]);
 const groups = ref<GroupItem[]>([]);
@@ -191,11 +188,18 @@ const handleOutsideClick = (event: { target: Node | null; }) => {
 
 // 打开右击菜单
 const showContextMenu = (event: MouseEvent, item: any, groupIndex: number, index: number) => {
+  event.preventDefault();
   contextMenuVisible.value = true;
-  contextMenuPosition.value = {x: event.clientX, y: event.clientY};
+  
+  // 增加水平和垂直偏移量
+  contextMenuPosition.value = {
+    x: event.pageX - 350, // 向左偏移350px
+    y: event.pageY - 80   // 向上偏移80px
+  };
+  
   selectedItem.value = item;
   selectedShortcutIndex.value = index;
-  selectedGroupShortcutIndex.value = groupIndex
+  selectedGroupShortcutIndex.value = groupIndex;
 };
 
 // ContextMenu右击事件监听回调
@@ -651,9 +655,10 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   overflow-y: auto;
   width: 100%;
   height: 100%;
-  max-height: 100%; /* 确保不超出父容器高度 */
+  max-height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .navigation-display::-webkit-scrollbar {
