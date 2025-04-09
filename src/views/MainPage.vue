@@ -650,6 +650,7 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100vh; /* 确保容器占满整个视口高度 */
 }
 
 .content-container {
@@ -657,8 +658,10 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
   gap: 20px;
   width: 100%;
   max-width: 1600px;
-  margin-top: 30px;
-  height: calc(100vh - 140px); /* 减去顶部搜索栏和padding的高度 */
+  margin-top: 20px;
+  height: calc(100vh - 100px); /* 调整为较小的高度值，减去SearchBar和padding的高度 */
+  max-height: calc(100vh - 100px); /* 添加最大高度限制 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* 侧边菜单样式 */
@@ -673,6 +676,8 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
   border: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* 添加滚动条，以防内容过多 */
+  max-height: 100%; /* 确保不超出父容器高度 */
 }
 
 .menu-item {
@@ -704,6 +709,13 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
   flex: 1;
   display: flex;
   overflow: hidden;
+  height: 100%; /* 确保内容区域占满整个高度 */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 @keyframes fadeIn {
@@ -740,6 +752,11 @@ const activeMenu = ref('navigation');  // 默认显示导航面板
 
 :deep(.el-switch:hover:not(.is-disabled) .el-switch__core) {
   background-color: rgba(64, 158, 255, 0.9);
+}
+
+/* 修改SearchBar组件的上边距 */
+:deep(.search-bar-container) {
+  margin-top: 10px;
 }
 </style>
 

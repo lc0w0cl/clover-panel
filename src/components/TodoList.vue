@@ -234,6 +234,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: 100%; /* 确保不超出父容器高度 */
 }
 
 .todo-header {
@@ -268,6 +269,7 @@ h2 {
   flex: 1;
   overflow-y: auto;
   padding-right: 10px;
+  max-height: calc(100% - 60px); /* 留出顶部标题和添加按钮的空间 */
 }
 
 .todo-list::-webkit-scrollbar {
@@ -291,27 +293,27 @@ h2 {
 .sticky-notes-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 30px;
   align-content: flex-start;
+  padding: 10px;
 }
 
 .sticky-note {
-  width: calc(33.333% - 20px);
-  min-width: 220px;
+  min-width: 180px;
   padding: 15px;
   border-radius: 4px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 150px;
+  min-height: 120px;
   position: relative;
   margin-bottom: 10px;
 }
 
 @media (max-width: 1200px) {
   .sticky-note {
-    width: calc(50% - 20px);
+    width: calc(50% - 30px);
   }
 }
 
@@ -414,7 +416,6 @@ h2 {
 }
 
 .new-note {
-  width: 100%;
   background-color: #fff59d;
   margin-bottom: 30px;
 }

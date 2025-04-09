@@ -646,17 +646,14 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 
 <style scoped>
 .navigation-display {
+  padding: 30px;
   flex: 1;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid rgba(255, 255, 255, 0.18);
   overflow-y: auto;
   width: 100%;
   height: 100%;
+  max-height: 100%; /* 确保不超出父容器高度 */
+  display: flex;
+  flex-direction: column;
 }
 
 .navigation-display::-webkit-scrollbar {
