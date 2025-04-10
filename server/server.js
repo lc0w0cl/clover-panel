@@ -116,7 +116,7 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     try {
         // 确保只传递域名部分
         const domain = new URL(url).hostname;
-        const logoUrl = `https://logo.clearbit.com/${domain}`;
+        const logoUrl = `https://img.logo.dev/${domain}?token=pk_Y5mYokT0RwC_jSR_YqrSHQ`;
 
         const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
         const logoPath = path.join(uploadDir, `${domain}.png`);
