@@ -241,7 +241,10 @@ onMounted(() => {
           v-for="todo in todos"
           :key="todo.id"
           class="sticky-note"
-          :class="{ 'completed': todo.completed }"
+          :class="{ 
+            'completed': todo.completed,
+            'editing': todo.isEditing 
+          }"
           :style="{
             backgroundColor: todo.color,
             transform: `rotate(${todo.rotation}deg)`
@@ -382,6 +385,14 @@ h2 {
   min-height: 120px;
   position: relative;
   margin-bottom: 10px;
+}
+
+.sticky-note.editing {
+  min-width: 250px;
+  min-height: 200px;
+  z-index: 20;
+  transform: rotate(0deg) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 1200px) {
@@ -545,7 +556,7 @@ h2 {
   resize: none;
   font-size: 16px;
   line-height: 1.6;
-  min-height: 80px;
+  min-height: 120px;
   font-family: inherit;
   color: #333;
   outline: none;
