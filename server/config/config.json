@@ -11,8 +11,5 @@
       "development": "test-panel",
       "production": "panel"
     }
-  },
-  "removebg": {
-    "apiKey": "oD8C3gJaTwmsJBaAsyMBrGJV"
   }
 }

@@ -182,71 +182,45 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     try {
         // 确保只传递域名部分
         const domain = new URL(url).hostname;
-        const logoUrl = `https://img.logo.dev/${domain}?token=pk_Y5mYokT0RwC_jSR_YqrSHQ`;
-
-        // 获取原始logo
-        const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
         
-        // 获取removebg API密钥
-        const removeBgConfig = defaultUser.removebg || defaultConfig.removebg;
-        const removeBgApiKey = removeBgConfig.apiKey;
+        // 尝试从网站根目录获取favicon的URL列表
+        const faviconUrls = [
+            `https://${domain}/favicon.ico`,
+            `https://${domain}/favicon.png`,
+            `https://www.${domain}/favicon.ico`,
+            `https://www.${domain}/favicon.png`
+        ];
+        
+        let logoResponse = null;
+        
+        // 尝试依次获取favicon
+        for (const faviconUrl of faviconUrls) {
+            try {
+                console.log(`尝试获取favicon: ${faviconUrl}`);
+                logoResponse = await axios.get(faviconUrl, {
+                    responseType: 'arraybuffer',
+                    timeout: 5000, // 设置5秒超时
+                    validateStatus: status => status === 200 // 只接受200状态码
+                });
+                
+                // 如果成功获取favicon，跳出循环
+                if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
+                    console.log(`成功获取favicon: ${faviconUrl}`);
+                    break;
+                }
+            } catch (error) {
+                console.log(`获取favicon失败: ${faviconUrl} - ${error.message}`);
+                logoResponse = null;
+            }
+        }
+        
+        // 如果所有favicon尝试都失败，使用logo.dev API作为备选
+        if (!logoResponse) {
+            console.log(`所有favicon获取尝试失败`);
+            return res.status(404).json({error: '无法获取网站favicon'});
+        }
         
         try {
-            // 根据官方文档调用remove.bg API
-            const formData = new FormData();
-            formData.append('size', 'auto');
-            formData.append('image_file', Buffer.from(logoResponse.data), {
-                filename: `${domain}.png`,
-                contentType: 'image/png'
-            });
-            
-            // 使用axios调用remove.bg API
-            const removeBgResponse = await axios.post('https://api.remove.bg/v1.0/removebg', 
-                formData, 
-                {
-                    headers: {
-                        ...formData.getHeaders(),
-                        'X-Api-Key': removeBgApiKey
-                    },
-                    responseType: 'arraybuffer'
-                }
-            );
-            
-            // 记录移除背景成功的日志
-            console.log(`===== 移除背景成功 =====`);
-            console.log(`域名: ${domain}`);
-            console.log(`时间: ${new Date().toISOString()}`);
-            console.log(`响应大小: ${removeBgResponse.data.length} 字节`);
-            console.log(`响应状态: ${removeBgResponse.status}`);
-            if (removeBgResponse.headers['x-credits-charged']) {
-                console.log(`使用积分: ${removeBgResponse.headers['x-credits-charged']}`);
-            }
-            console.log(`=======================`);
-            
-            // 生成唯一文件名
-            const objectName = `${domain}-${Date.now()}.png`;
-            
-            // 使用无背景图片上传到Minio
-            await minioClient.putObject(
-                BUCKET_NAME,
-                objectName,
-                Buffer.from(removeBgResponse.data)
-            );
-            
-            // 获取Minio配置
-            const minioConfig = defaultUser.minio || defaultConfig.minio;
-            
-            // 构建访问URL
-            const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
-            
-            res.json({message: '文件保存成功', path: filepath});
-            
-        } catch (removeBgError) {
-            console.error('移除背景失败:', removeBgError);
-            
-            // 出错时使用原始图片
-            console.log('使用原始图片作为备选');
-            
             // 生成唯一文件名
             const objectName = `${domain}-${Date.now()}.png`;
             
@@ -263,7 +237,18 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
             // 构建访问URL
             const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
             
-            res.json({message: '文件保存成功(原始图片)', path: filepath});
+            // 记录获取成功日志
+            console.log(`===== 获取favicon成功 =====`);
+            console.log(`域名: ${domain}`);
+            console.log(`时间: ${new Date().toISOString()}`);
+            console.log(`大小: ${logoResponse.data.length} 字节`);
+            console.log(`=======================`);
+            
+            res.json({message: '文件保存成功', path: filepath});
+            
+        } catch (error) {
+            console.error('保存文件失败:', error);
+            res.status(500).json({error: '保存文件失败'});
         }
     } catch (error) {
         console.log(error);
