@@ -31,6 +31,9 @@ const defaultConfig = {
         accessKey: "minioadmin",
         secretKey: "minioadmin",
         bucketName: "panel"
+    },
+    removebg: {
+        apiKey: "YOUR_REMOVE_BG_API_KEY"
     }
 };
 
@@ -185,7 +188,7 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
         const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
         
         // 获取removebg API密钥
-        const removeBgConfig = defaultUser.removebg || { apiKey: 'YOUR_REMOVE_BG_API_KEY' };
+        const removeBgConfig = defaultUser.removebg || defaultConfig.removebg;
         const removeBgApiKey = removeBgConfig.apiKey;
         
         try {
