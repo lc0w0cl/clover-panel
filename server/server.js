@@ -231,8 +231,8 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
             if (htmlResponse.data) {
                 // 提取link标签中的favicon URL
                 const html = htmlResponse.data.toString();
-                const iconRegex = /<link[^>]*rel=["'](?:shortcut )?icon["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
-                const faviconRegex = /<link[^>]*rel=["'](?:apple-touch-icon|favicon)["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
+                const iconRegex = /<link[^>]*rel\s*=\s*(?:["'])?(?:shortcut\s+)?icon(?:["'])?[^>]*href\s*=\s*(?:["'])?([^"'>\s]+)(?:["'])?[^>]*>/gi;
+                const faviconRegex = /<link[^>]*rel\s*=\s*(?:["'])?(?:apple-touch-icon|favicon)(?:["'])?[^>]*href\s*=\s*(?:["'])?([^"'>\s]+)(?:["'])?[^>]*>/gi;
                 
                 let match;
                 let iconUrls = [];
