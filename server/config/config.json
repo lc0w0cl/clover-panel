@@ -1,4 +1,12 @@
 {
   "username": "admin",
-  "password": "admin"
+  "password": "admin",
+  "minio": {
+    "endPoint": "minio.middle-frist.cn",
+    "port": 443,
+    "useSSL": true,
+    "accessKey": "0vG0hBrycc1NEEfOhwly",
+    "secretKey": "fIThVHVn6OkSfY2P4qUN93JXtddvPA2pWT6Ck5q7",
+    "bucketName": "test-panel"
+  }
 }

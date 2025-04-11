@@ -301,12 +301,13 @@ const fetchLogo = async () => {
 };
 
 const deleteLogo = async () => {
-  if (upload_new_logo.value) {
+  if (upload_new_logo.value && form.icon) {
     try {
+      // 直接将图标URL发送到后端处理删除
       const response = await axios.delete('/api/delete-logo', {
-        params: { filename: form.icon } // 换为实际的文件路径
+        params: { filename: form.icon }
       });
-      console.log('件删功:', response.data);
+      console.log('文件删除成功:', response.data);
     } catch (error) {
       console.error('删除文件失败:', error);
     }

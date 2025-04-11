@@ -6,9 +6,14 @@ import multer from 'multer';
 import axios from "axios";
 import crypto from 'crypto';
 import { initializeDatabase, db } from './database.js';
+import * as Minio from 'minio';
 
 const app = express();
 const port = 3000;
+
+// Minio客户端配置
+let minioClient;
+let BUCKET_NAME;
 
 // 在文件开头添加变量声明
 let JWT_SECRET = crypto.randomBytes(64).toString('hex');
@@ -17,13 +22,20 @@ let defaultUser;
 // 修改默认配置对象
 const defaultConfig = {
     username: "admin",
-    password: "admin123"
+    password: "admin123",
+    minio: {
+        endPoint: "minio.xxx.cn",
+        port: 443,
+        useSSL: true,
+        accessKey: "minioadmin",
+        secretKey: "minioadmin",
+        bucketName: "panel"
+    }
 };
 
 // 环境设置
 const isDev = process.env.NODE_ENV !== 'production';
 const dbDir = isDev ? './' : '/app/db';
-const uploadDir = isDev ? '../src/assets/logo' : '/app/logo'
 console.log('当前环境:', isDev ? '开发' : '生产')
 
 // 确保数据库目录存在
@@ -50,11 +62,45 @@ const initializeConfig = () => {
 
         // 读取配置
         defaultUser = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        
+        // 初始化Minio客户端
+        initializeMinioClient();
+        
         console.log('配置加载成功');
     } catch (err) {
         console.error('配置初始化失败:', err);
         process.exit(1);
     }
+};
+
+// 添加Minio客户端初始化函数
+const initializeMinioClient = () => {
+    const minioConfig = defaultUser.minio || defaultConfig.minio;
+    
+    // Minio客户端配置
+    minioClient = new Minio.Client({
+        endPoint: minioConfig.endPoint,
+        port: minioConfig.port,
+        useSSL: minioConfig.useSSL,
+        accessKey: minioConfig.accessKey,
+        secretKey: minioConfig.secretKey
+    });
+    
+    // Minio桶名
+    BUCKET_NAME = minioConfig.bucketName;
+    
+    // 确保Minio桶存在
+    (async () => {
+        try {
+            const exists = await minioClient.bucketExists(BUCKET_NAME);
+            if (!exists) {
+                await minioClient.makeBucket(BUCKET_NAME);
+                console.log(`已创建桶 ${BUCKET_NAME}`);
+            }
+        } catch (err) {
+            console.error('Minio初始化错误:', err);
+        }
+    })();
 };
 
 // 在数据库初始化之前调用配置初始化
@@ -82,33 +128,39 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-
 // 设置 multer 存储配置
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir); // 上传文件的目标目录
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extension = path.extname(file.originalname);
-        cb(null, uniqueSuffix + extension); // 使用随机文件名
-    }
-});
-
+const storage = multer.memoryStorage(); // 使用内存存储，不再保存到本地文件系统
 const upload = multer({storage: storage});
 
 // 文件上传接口
-app.post('/api/upload', authenticateToken, upload.single('file'), (req, res) => {
+app.post('/api/upload', authenticateToken, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send({error: 'No file uploaded'});
     }
-    let filepath;
-    if (isDev) {
-        filepath = '/src/assets/logo/' + req.file.filename
-    } else {
-        filepath = '/logo/' + req.file.filename
+    
+    try {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const extension = path.extname(req.file.originalname) || '.png';
+        const objectName = `${uniqueSuffix}${extension}`;
+        
+        // 上传文件到Minio
+        await minioClient.putObject(
+            BUCKET_NAME, 
+            objectName, 
+            req.file.buffer
+        );
+        
+        // 获取Minio配置
+        const minioConfig = defaultUser.minio || defaultConfig.minio;
+        
+        // 构建文件URL
+        const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
+        
+        res.send({message: '文件上传成功', filepath: filepath});
+    } catch (error) {
+        console.error('Minio上传错误:', error);
+        res.status(500).send({error: '文件上传失败'});
     }
-    res.send({message: '文件上传成功', filepath: filepath});
 });
 
 app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
@@ -119,10 +171,23 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
         const logoUrl = `https://img.logo.dev/${domain}?token=pk_Y5mYokT0RwC_jSR_YqrSHQ`;
 
         const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
-        const logoPath = path.join(uploadDir, `${domain}.png`);
-
-        fs.writeFileSync(logoPath, logoResponse.data);
-        const filepath = isDev ? `/src/assets/logo/${domain}.png` : `/logo/${domain}.png`;
+        
+        // 生成唯一文件名
+        const objectName = `${domain}-${Date.now()}.png`;
+        
+        // 上传到Minio
+        await minioClient.putObject(
+            BUCKET_NAME,
+            objectName,
+            Buffer.from(logoResponse.data)
+        );
+        
+        // 获取Minio配置
+        const minioConfig = defaultUser.minio || defaultConfig.minio;
+        
+        // 构建访问URL
+        const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
+        
         res.json({message: '文件保存成功', path: filepath});
     } catch (error) {
         console.log(error);
@@ -130,22 +195,53 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     }
 });
 
-app.delete('/api/delete-logo', authenticateToken, (req, res) => {
+app.delete('/api/delete-logo', authenticateToken, async (req, res) => {
     const {filename} = req.query;
-    let fullPath;
-    if (isDev) {
-        fullPath = path.join('..', 'src', 'assets', 'logo', path.basename(filename));
-    } else {
-        fullPath = path.join('app', 'logo', path.basename(filename))
-    }
-
-    fs.unlink(fullPath, (err) => {
-        if (err) {
-            console.error('删除文件失败:', err);
-            return res.status(500).json({error: '删除文件失败'});
+    
+    try {
+        if (!filename) {
+            return res.status(400).json({error: '未提供文件名'});
         }
+
+        let objectName;
+        // 处理完整URL路径(例如: https://minio.xxx.cn/bucket-name/object-name)
+        if (filename.startsWith('http')) {
+            try {
+                const url = new URL(filename);
+                // 移除第一个斜杠，然后按斜杠分割路径
+                const pathParts = url.pathname.substring(1).split('/');
+                
+                // 如果路径至少有两部分(桶名和对象名)
+                if (pathParts.length >= 2) {
+                    // 最后一部分是对象名
+                    objectName = pathParts[pathParts.length - 1];
+                } else {
+                    // 无法解析路径
+                    return res.status(400).json({error: '无法从URL解析对象名称'});
+                }
+            } catch (error) {
+                console.error('解析URL失败:', error);
+                return res.status(400).json({error: '无效的URL格式'});
+            }
+        } else {
+            // 处理简单文件名或相对路径
+            objectName = filename.split('/').pop();
+        }
+        
+        if (!objectName) {
+            return res.status(400).json({error: '无效的文件路径'});
+        }
+        
+        console.log(`尝试删除对象: ${objectName} 从桶: ${BUCKET_NAME}`);
+        
+        // 从Minio删除对象
+        await minioClient.removeObject(BUCKET_NAME, objectName);
+        
         res.json({message: '文件删除成功'});
-    });
+    } catch (error) {
+        console.error('删除文件失败:', error);
+        res.status(500).json({error: '删除文件失败'});
+    }
 });
 
 // 解析 JSON 请求体
@@ -366,31 +462,30 @@ app.delete('/api/groups/:id', authenticateToken, (req, res) => {
 });
 
 // 更新快捷方式
-// app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
-//     const { id } = req.params;
-//     const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
-//     const sql = `UPDATE shortcuts
-//                  SET groupId = ?,
-//                      orderNum = ?,
-//                      title = ?,
-//                      icon = ?,
-//                      internalNetwork = ?,
-//                      privateNetwork = ?
-//                  WHERE id = ?`;
-//     const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork, id];
-//
-//     db.run(sql, params, function(err) {
-//         if (err) {
-//             res.status(400).json({"error": err.message});
-//             return;
-//         }
-//         res.json({
-//             "message": "success",
-//             "changes": this.changes
-//         });
-//     });
-// });
+app.put('/api/shortcuts/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { groupId, orderNum, title, icon, internalNetwork, privateNetwork } = req.body;
+    const sql = `UPDATE shortcuts
+                 SET groupId = ?,
+                     orderNum = ?,
+                     title = ?,
+                     icon = ?,
+                     internalNetwork = ?,
+                     privateNetwork = ?
+                 WHERE id = ?`;
+    const params = [groupId, orderNum, title, icon, internalNetwork, privateNetwork, id];
 
+    db.run(sql, params, function(err) {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({
+            "message": "success",
+            "changes": this.changes
+        });
+    });
+});
 
 app.post('/api/change-password', authenticateToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
