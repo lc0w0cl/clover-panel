@@ -7,6 +7,7 @@ import axios from "axios";
 import crypto from 'crypto';
 import { initializeDatabase, db } from './database.js';
 import * as Minio from 'minio';
+import FormData from 'form-data';
 
 const app = express();
 const port = 3000;
@@ -170,25 +171,87 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
         const domain = new URL(url).hostname;
         const logoUrl = `https://img.logo.dev/${domain}?token=pk_Y5mYokT0RwC_jSR_YqrSHQ`;
 
+        // 获取原始logo
         const logoResponse = await axios.get(logoUrl, {responseType: 'arraybuffer'});
         
-        // 生成唯一文件名
-        const objectName = `${domain}-${Date.now()}.png`;
+        // 获取removebg API密钥
+        const removeBgConfig = defaultUser.removebg || { apiKey: 'YOUR_REMOVE_BG_API_KEY' };
+        const removeBgApiKey = removeBgConfig.apiKey;
         
-        // 上传到Minio
-        await minioClient.putObject(
-            BUCKET_NAME,
-            objectName,
-            Buffer.from(logoResponse.data)
-        );
-        
-        // 获取Minio配置
-        const minioConfig = defaultUser.minio || defaultConfig.minio;
-        
-        // 构建访问URL
-        const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
-        
-        res.json({message: '文件保存成功', path: filepath});
+        try {
+            // 根据官方文档调用remove.bg API
+            const formData = new FormData();
+            formData.append('size', 'auto');
+            formData.append('image_file', Buffer.from(logoResponse.data), {
+                filename: `${domain}.png`,
+                contentType: 'image/png'
+            });
+            
+            // 使用axios调用remove.bg API
+            const removeBgResponse = await axios.post('https://api.remove.bg/v1.0/removebg', 
+                formData, 
+                {
+                    headers: {
+                        ...formData.getHeaders(),
+                        'X-Api-Key': removeBgApiKey
+                    },
+                    responseType: 'arraybuffer'
+                }
+            );
+            
+            // 记录移除背景成功的日志
+            console.log(`===== 移除背景成功 =====`);
+            console.log(`域名: ${domain}`);
+            console.log(`时间: ${new Date().toISOString()}`);
+            console.log(`响应大小: ${removeBgResponse.data.length} 字节`);
+            console.log(`响应状态: ${removeBgResponse.status}`);
+            if (removeBgResponse.headers['x-credits-charged']) {
+                console.log(`使用积分: ${removeBgResponse.headers['x-credits-charged']}`);
+            }
+            console.log(`=======================`);
+            
+            // 生成唯一文件名
+            const objectName = `${domain}-${Date.now()}.png`;
+            
+            // 使用无背景图片上传到Minio
+            await minioClient.putObject(
+                BUCKET_NAME,
+                objectName,
+                Buffer.from(removeBgResponse.data)
+            );
+            
+            // 获取Minio配置
+            const minioConfig = defaultUser.minio || defaultConfig.minio;
+            
+            // 构建访问URL
+            const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
+            
+            res.json({message: '文件保存成功', path: filepath});
+            
+        } catch (removeBgError) {
+            console.error('移除背景失败:', removeBgError);
+            
+            // 出错时使用原始图片
+            console.log('使用原始图片作为备选');
+            
+            // 生成唯一文件名
+            const objectName = `${domain}-${Date.now()}.png`;
+            
+            // 上传原始图片到Minio
+            await minioClient.putObject(
+                BUCKET_NAME,
+                objectName,
+                Buffer.from(logoResponse.data)
+            );
+            
+            // 获取Minio配置
+            const minioConfig = defaultUser.minio || defaultConfig.minio;
+            
+            // 构建访问URL
+            const filepath = `https://${minioConfig.endPoint}/${BUCKET_NAME}/${objectName}`;
+            
+            res.json({message: '文件保存成功(原始图片)', path: filepath});
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({error: '抓取logo失败'});

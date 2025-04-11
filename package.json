@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.7.7",
+    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "element-plus": "^2.8.5",
     "express": "^4.21.1",
+    "form-data": "^4.0.2",
     "minio": "^8.0.5",
     "multer": "^1.4.5-lts.1",
     "sqlite3": "^5.1.7",
