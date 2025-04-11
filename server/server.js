@@ -182,42 +182,116 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     try {
         // 确保只传递域名部分
         const domain = new URL(url).hostname;
-        
-        // 尝试从网站根目录获取favicon的URL列表
-        const faviconUrls = [
-            `https://${domain}/favicon.ico`,
-            `https://${domain}/favicon.png`,
-            `https://www.${domain}/favicon.ico`,
-            `https://www.${domain}/favicon.png`
-        ];
+        const fullUrl = url.startsWith('http') ? url : `https://${domain}`;
         
         let logoResponse = null;
         
-        // 尝试依次获取favicon
-        for (const faviconUrl of faviconUrls) {
-            try {
-                console.log(`尝试获取favicon: ${faviconUrl}`);
-                logoResponse = await axios.get(faviconUrl, {
-                    responseType: 'arraybuffer',
-                    timeout: 5000, // 设置5秒超时
-                    validateStatus: status => status === 200 // 只接受200状态码
+        // 首先尝试获取网站HTML并解析favicon链接
+        try {
+            console.log(`尝试获取网站HTML: ${fullUrl}`);
+            const htmlResponse = await axios.get(fullUrl, {
+                timeout: 8000, // 设置8秒超时
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+            });
+            
+            if (htmlResponse.data) {
+                // 提取link标签中的favicon URL
+                const html = htmlResponse.data.toString();
+                const iconRegex = /<link[^>]*rel=["'](?:shortcut )?icon["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
+                const faviconRegex = /<link[^>]*rel=["'](?:apple-touch-icon|favicon)["'][^>]*href=["']([^"']+)["'][^>]*>/gi;
+                
+                let match;
+                let iconUrls = [];
+                
+                // 寻找所有icon和favicon标签
+                while ((match = iconRegex.exec(html)) !== null) {
+                    iconUrls.push(match[1]);
+                }
+                
+                while ((match = faviconRegex.exec(html)) !== null) {
+                    iconUrls.push(match[1]);
+                }
+                
+                console.log(`从HTML中找到${iconUrls.length}个潜在的图标链接`);
+                
+                // 处理相对路径，转换为绝对URL
+                iconUrls = iconUrls.map(iconUrl => {
+                    if (iconUrl.startsWith('http')) {
+                        return iconUrl;
+                    } else if (iconUrl.startsWith('//')) {
+                        return `https:${iconUrl}`;
+                    } else if (iconUrl.startsWith('/')) {
+                        return `https://${domain}${iconUrl}`;
+                    } else {
+                        return `https://${domain}/${iconUrl}`;
+                    }
                 });
                 
-                // 如果成功获取favicon，跳出循环
-                if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
-                    console.log(`成功获取favicon: ${faviconUrl}`);
-                    break;
+                // 尝试获取每个图标URL
+                for (const iconUrl of iconUrls) {
+                    try {
+                        console.log(`尝试从HTML中提取的链接获取图标: ${iconUrl}`);
+                        logoResponse = await axios.get(iconUrl, {
+                            responseType: 'arraybuffer',
+                            timeout: 5000,
+                            validateStatus: status => status === 200
+                        });
+                        
+                        // 如果成功获取图标，跳出循环
+                        if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
+                            console.log(`成功获取HTML中的图标: ${iconUrl}`);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(`获取HTML中的图标失败: ${iconUrl} - ${error.message}`);
+                        logoResponse = null;
+                    }
                 }
-            } catch (error) {
-                console.log(`获取favicon失败: ${faviconUrl} - ${error.message}`);
-                logoResponse = null;
+            }
+        } catch (htmlError) {
+            console.log(`获取网站HTML失败: ${htmlError.message}`);
+        }
+        
+        // 如果从HTML解析失败，尝试从网站根目录获取favicon的URL列表
+        if (!logoResponse) {
+            console.log(`从HTML未找到有效图标，尝试常见favicon路径`);
+            const faviconUrls = [
+                `https://${domain}/favicon.ico`,
+                `https://${domain}/favicon.png`,
+                `https://${domain}/apple-touch-icon.png`,
+                `https://${domain}/apple-touch-icon-precomposed.png`,
+                `https://www.${domain}/favicon.ico`,
+                `https://www.${domain}/favicon.png`
+            ];
+            
+            // 尝试依次获取favicon
+            for (const faviconUrl of faviconUrls) {
+                try {
+                    console.log(`尝试获取favicon: ${faviconUrl}`);
+                    logoResponse = await axios.get(faviconUrl, {
+                        responseType: 'arraybuffer',
+                        timeout: 5000, // 设置5秒超时
+                        validateStatus: status => status === 200 // 只接受200状态码
+                    });
+                    
+                    // 如果成功获取favicon，跳出循环
+                    if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
+                        console.log(`成功获取favicon: ${faviconUrl}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.log(`获取favicon失败: ${faviconUrl} - ${error.message}`);
+                    logoResponse = null;
+                }
             }
         }
         
-        // 如果所有favicon尝试都失败，使用logo.dev API作为备选
+        // 如果所有favicon尝试都失败
         if (!logoResponse) {
-            console.log(`所有favicon获取尝试失败`);
-            return res.status(404).json({error: '无法获取网站favicon'});
+            console.log(`所有图标获取尝试失败`);
+            return res.status(404).json({error: '无法获取网站图标'});
         }
         
         try {
