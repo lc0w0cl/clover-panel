@@ -50,8 +50,8 @@ const openLink = () => {
 
 .icon-wrapper {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 40px;
+  height: 40px;
 }
 
 .icon-placeholder {
