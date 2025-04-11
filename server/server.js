@@ -87,8 +87,18 @@ const initializeMinioClient = () => {
         secretKey: minioConfig.secretKey
     });
     
-    // Minio桶名
-    BUCKET_NAME = minioConfig.bucketName;
+    // 根据环境选择不同的桶名
+    if (typeof minioConfig.bucketName === 'object') {
+        // 如果bucketName是对象，根据环境选择
+        BUCKET_NAME = isDev ? 
+            minioConfig.bucketName.development : 
+            minioConfig.bucketName.production;
+    } else {
+        // 向后兼容，如果bucketName是字符串直接使用
+        BUCKET_NAME = minioConfig.bucketName;
+    }
+    
+    console.log(`当前环境: ${isDev ? '开发环境' : '生产环境'}, 使用Minio桶: ${BUCKET_NAME}`);
     
     // 确保Minio桶存在
     (async () => {
