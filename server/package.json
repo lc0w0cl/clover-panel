@@ -9,6 +9,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "sqlite3": "^5.1.7",
-    "minio": "^8.0.5"
+    "minio": "^8.0.5",
+    "form-data": "^4.0.2"
   }
 }
