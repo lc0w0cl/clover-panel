@@ -41,13 +41,13 @@ const openLink = () => {
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: auto;
+  width: 190px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   padding: 12px 16px;
   border-radius: 10px;
-  min-width: 160px;
   margin: 4px;
+  box-sizing: border-box;
 }
 
 .icon-wrapper {
@@ -91,6 +91,8 @@ const openLink = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  max-width: calc(100% - 52px); /* 40px图标宽度 + 12px左边距 */
 }
 
 .shortcut-card:hover {

@@ -688,6 +688,13 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   margin-bottom: 30px;
 }
 
+.drag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+}
+
 .group-header {
   margin-bottom: 15px;
 }
@@ -842,12 +849,6 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   border-radius: 15px;
   color: #909399;
   font-size: 14px;
-}
-
-.drag{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
 }
 
 .group-actions {
