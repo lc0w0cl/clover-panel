@@ -39,19 +39,22 @@ const openLink = () => {
 <style scoped>
 .shortcut-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  width: 100px;
+  width: auto;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  padding: 10px;
+  padding: 12px 16px;
   border-radius: 10px;
+  min-width: 160px;
+  margin: 4px;
 }
 
 .icon-wrapper {
   position: relative;
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
 }
 
 .icon-placeholder {
@@ -80,21 +83,20 @@ const openLink = () => {
 }
 
 .title {
-  margin-top: 8px;
-  font-size: 12px;
-  text-align: center;
+  margin-left: 12px;
+  font-size: 14px;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .shortcut-card:hover {
-  transform: scale(1.15) translateY(-10px);
+  transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.1);
 }
-
-/* .shortcut-card:hover .icon-wrapper { */
-  /* box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); */
-/* } */
 
 .shortcut-card:hover .icon {
   transform: scale(1.15);
@@ -102,6 +104,5 @@ const openLink = () => {
 
 .shortcut-card:hover .title {
   font-weight: bold;
-  transform: scale(1.1);
 }
 </style>

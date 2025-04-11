@@ -684,7 +684,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 15px;
+  gap: 20px;
   margin-bottom: 30px;
 }
 
@@ -847,6 +847,7 @@ const confirmDeleteGroup = (group: GroupItem, event: Event) => {
 .drag{
   display: flex;
   flex-wrap: wrap;
+  gap: 20px;
 }
 
 .group-actions {
