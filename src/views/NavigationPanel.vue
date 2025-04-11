@@ -290,14 +290,29 @@ const handleFileChange = async (event: any) => {
 
 const fetchLogo = async () => {
   if (form.internalNetwork == undefined || form.internalNetwork == '') {
+    ElMessage.warning('请输入公网地址');
     return;
   }
-  const response = await axios.get('/api/fetch-logo', {
-    params: {url: form.internalNetwork}
-  });
-  console.log('抓取logo成功:', response.data);
-  form.icon = response.data.path;
-  upload_new_logo.value = true;
+  try {
+    const response = await axios.get('/api/fetch-logo', {
+      params: {url: form.internalNetwork}
+    });
+    if (response.data.error) {
+      ElMessage.error(response.data.message);
+      return;
+    }
+    console.log('抓取logo成功:', response.data);
+    form.icon = response.data.path;
+    upload_new_logo.value = true;
+    ElMessage.success('图标获取成功');
+  } catch (error: any) {
+    console.error('抓取logo失败:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      ElMessage.error(error.response.data.message);
+    } else {
+      ElMessage.error('获取图标失败，请检查网络连接或稍后重试');
+    }
+  }
 };
 
 const deleteLogo = async () => {

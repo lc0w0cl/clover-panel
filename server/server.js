@@ -177,6 +177,37 @@ app.post('/api/upload', authenticateToken, upload.single('file'), async (req, re
     }
 });
 
+// 添加一个辅助函数，用于验证内容是否为图像
+const isValidImageContent = (buffer, contentType) => {
+    // 检查内容类型是否为图像
+    if (contentType && contentType.startsWith('image/')) {
+        return true;
+    }
+    
+    // 检查文件的魔数（magic numbers）
+    if (buffer && buffer.length > 4) {
+        // 检查常见图像格式的魔数
+        // JPEG: 以FF D8 FF开头
+        if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+            return true;
+        }
+        // PNG: 以89 50 4E 47开头
+        if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+            return true;
+        }
+        // GIF: 以47 49 46 38开头
+        if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+            return true;
+        }
+        // ICO: 以00 00 01 00开头
+        if (buffer[0] === 0x00 && buffer[1] === 0x00 && buffer[2] === 0x01 && buffer[3] === 0x00) {
+            return true;
+        }
+    }
+    
+    return false;
+};
+
 app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
     const {url} = req.query;
     try {
@@ -185,6 +216,7 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
         const fullUrl = url.startsWith('http') ? url : `https://${domain}`;
         
         let logoResponse = null;
+        let bestIconUrl = null;
         
         // 首先尝试获取网站HTML并解析favicon链接
         try {
@@ -239,9 +271,20 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
                             validateStatus: status => status === 200
                         });
                         
+                        // 验证获取的内容是否为图像
+                        const contentType = logoResponse.headers['content-type'];
+                        const isImage = isValidImageContent(logoResponse.data, contentType);
+                        
+                        if (!isImage) {
+                            console.log(`获取到的内容不是图像: ${iconUrl}, 内容类型: ${contentType}`);
+                            logoResponse = null;
+                            continue;
+                        }
+                        
                         // 如果成功获取图标，跳出循环
                         if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
                             console.log(`成功获取HTML中的图标: ${iconUrl}`);
+                            bestIconUrl = iconUrl;
                             break;
                         }
                     } catch (error) {
@@ -276,9 +319,20 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
                         validateStatus: status => status === 200 // 只接受200状态码
                     });
                     
+                    // 验证获取的内容是否为图像
+                    const contentType = logoResponse.headers['content-type'];
+                    const isImage = isValidImageContent(logoResponse.data, contentType);
+                    
+                    if (!isImage) {
+                        console.log(`获取到的内容不是图像: ${faviconUrl}, 内容类型: ${contentType}`);
+                        logoResponse = null;
+                        continue;
+                    }
+                    
                     // 如果成功获取favicon，跳出循环
                     if (logoResponse && logoResponse.data && logoResponse.data.length > 0) {
                         console.log(`成功获取favicon: ${faviconUrl}`);
+                        bestIconUrl = faviconUrl;
                         break;
                     }
                 } catch (error) {
@@ -290,8 +344,12 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
         
         // 如果所有favicon尝试都失败
         if (!logoResponse) {
-            console.log(`所有图标获取尝试失败`);
-            return res.status(404).json({error: '无法获取网站图标'});
+            console.log(`所有图标获取尝试失败: ${domain}`);
+            return res.status(200).json({
+                error: '无法获取网站图标',
+                domain: domain,
+                message: `尝试获取 ${domain} 的图标失败，请确认网站是否提供了有效的图标文件`
+            });
         }
         
         try {
@@ -316,6 +374,7 @@ app.get('/api/fetch-logo', authenticateToken, async (req, res) => {
             console.log(`域名: ${domain}`);
             console.log(`时间: ${new Date().toISOString()}`);
             console.log(`大小: ${logoResponse.data.length} 字节`);
+            console.log(`URL: ${bestIconUrl}`);
             console.log(`=======================`);
             
             res.json({message: '文件保存成功', path: filepath});

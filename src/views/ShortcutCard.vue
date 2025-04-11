@@ -1,13 +1,15 @@
 <template>
   <div class="shortcut-card" @click="openLink">
     <div class="icon-wrapper">
-      <div v-if="!imageLoaded" class="icon-placeholder"></div>
+      <div v-if="!imageLoaded && !loadError" class="icon-placeholder"></div>
+      <div v-if="loadError" class="icon-error" title="图标加载失败">!</div>
       <img 
         :src="icon" 
         :alt="title" 
         class="icon" 
         :class="{ 'icon-loaded': imageLoaded }"
         @load="onImageLoad"
+        @error="onImageError"
       >
     </div>
     <div class="title">{{ title }}</div>
@@ -24,9 +26,17 @@ const props = defineProps({
 });
 
 const imageLoaded = ref(false);
+const loadError = ref(false);
 
 const onImageLoad = () => {
   imageLoaded.value = true;
+  loadError.value = false;
+};
+
+const onImageError = () => {
+  loadError.value = true;
+  imageLoaded.value = false;
+  console.error(`无法加载图标: ${props.icon}`);
 };
 
 const openLink = () => {
@@ -64,6 +74,22 @@ const openLink = () => {
   width: 100%;
   height: 100%;
   background-color: #f0f0f0;
+  border-radius: 15px;
+}
+
+.icon-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ff5252;
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
   border-radius: 15px;
 }
 
